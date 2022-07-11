@@ -16,6 +16,12 @@ export default {
         '@Core': './src/Core',
         '@FMath': './src/FMath',
         '@Physics': './src/Physics',
-        '@Geometry': './src/Geometry'
+        '@Geometry': './src/Geometry',
+        '@Util': './src/Util',
+    },
+    optimize: {
+        bundle: true,
+        minify: true,
+        sourcemap: true
     }
 };

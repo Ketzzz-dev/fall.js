@@ -9,7 +9,8 @@
             "@Core/*": ["./src/Core/*"],
             "@FMath/*": ["./src/FMath/*"],
             "@Physics/*": ["./src/Physics/*"],
-            "@Geometry/*": ["./src/Geometry/*"]
+            "@Geometry/*": ["./src/Geometry/*"],
+            "@Util/*": ["./src/Util/*"]
         },
         "isolatedModules": true,
         "noEmit": true,

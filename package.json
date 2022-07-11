@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "snowpack dev",
-    "build": "snowpack build"
+    "build": "snowpack build",
+    "tsc-build": "tsc"
   },
   "repository": {
     "type": "git",
@@ -19,14 +20,12 @@
   "homepage": "https://github.com/Ketz-dev/fall.js#readme",
   "devDependencies": {
     "@snowpack/plugin-typescript": "^1.2.1",
-    "@types/createjs": "^0.0.29",
     "@types/node": "^18.0.3",
     "@types/snowpack-env": "^2.3.4",
     "snowpack": "^3.8.8",
     "typescript": "^4.7.4"
   },
   "dependencies": {
-    "createjs-module": "^0.8.3",
     "eventemitter3": "^4.0.7"
   }
 }
