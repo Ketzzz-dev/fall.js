@@ -1,0 +1,165 @@
+import { distance, dot, length, normalize } from "@FMath/Functions"
+import { Vector } from "@FMath/Vector"
+
+export type Intersection = [collision: boolean, normal: Vector, depth: number]
+export type Projection = [min: number, max: number]
+
+function getClosestPointOnPolygon(center: Vector, vertices: Vector[]): Vector {
+    let point = Vector.ZERO
+    let minDistance = Number.MAX_VALUE
+
+    for (let vertex of vertices) {
+        let dist = distance(vertex, center)
+
+        if (dist < minDistance) {
+            minDistance = dist
+            point = vertex
+        }
+    }
+
+    return point
+}
+function projectVertices(vertices: Vector[], axis: Vector): Projection {
+    let min = Number.MAX_VALUE
+    let max = Number.MIN_VALUE
+
+    vertices.forEach(vertex => {
+        let proj = dot(vertex, axis)
+
+        if (proj < min) min = proj
+        if (proj > max) max = proj
+    })
+
+    return [min, max]
+}
+function projectCircle(center: Vector, radius: number, axis: Vector): Projection {
+    let direction = normalize(axis)
+    let pointToEdge = Vector.mul(direction, radius)
+
+    let pointA = Vector.add(center, pointToEdge)
+    let pointB = Vector.sub(center, pointToEdge)
+
+    let min = dot(pointA, axis)
+    let max = dot(pointB, axis)
+
+    if (min >= max)
+        [min, max] = [max, min]
+
+    return [min, max]
+}
+
+export function intersectCircles(centerA: Vector, radiusA: number, centerB: Vector, radiusB: number): Intersection {
+    let normal = Vector.ZERO
+    let depth = 0
+    
+    let dist = distance(centerA, centerB)
+    let radii = radiusA + radiusB
+
+    if (dist >= radii)
+        return [false, normal, depth]
+
+    normal = normalize(Vector.sub(centerB, centerA))
+    depth = radii - dist
+
+    return [true, normal, depth]
+}
+export function intersectPolygons(centerA: Vector, verticesA: Vector[], centerB: Vector, verticesB: Vector[]): Intersection {
+    let normal = Vector.ZERO
+    let depth = Number.MAX_VALUE
+    
+    for (let i = 0; i < verticesA.length; i++) {
+        let vertexA = verticesA[i]
+        let vertexB = verticesA[(i + 1) % verticesA.length]
+
+        let edge = Vector.sub(vertexB, vertexA)
+        let axis = normalize(new Vector(-edge.y, edge.x))
+
+        let [minA, maxA] = projectVertices(verticesA, axis)
+        let [minB, maxB] = projectVertices(verticesB, axis)
+
+        if (minA >= maxB || minB >= maxA)
+            return [false, normal, depth]
+
+        let axisDepth = Math.min(maxB - minA, maxA - minB)
+
+        if (axisDepth < depth) {
+            depth = axisDepth
+            normal = axis
+        }
+    }
+    for (let i = 0; i < verticesB.length; i++) {
+        let vertexA = verticesB[i]
+        let vertexB = verticesB[(i + 1) % verticesB.length]
+
+        let edge = Vector.sub(vertexB, vertexA)
+        let axis = normalize(new Vector(-edge.y, edge.x))
+
+        let [minA, maxA] = projectVertices(verticesA, axis)
+        let [minB, maxB] = projectVertices(verticesB, axis)
+
+        if (minA >= maxB || minB >= maxA)
+            return [false, normal, depth]
+        
+        let axisDepth = Math.min(maxB - minA, maxA - minB)
+
+        if (axisDepth < depth) {
+            depth = axisDepth
+            normal = axis
+        }
+    }
+
+    let direction = Vector.sub(centerB, centerA)
+
+    if (dot(direction, normal) < 0)
+        normal = normal.negative
+
+    return [true, normal, depth]
+}
+export function intersectCirclePolygon(circleCenter: Vector, circleRadius: number, polygonCenter: Vector, polygonVertices: Vector[]): Intersection {
+    let normal = Vector.ZERO
+    let depth = Number.MAX_VALUE
+    
+    for (let i = 0; i < polygonVertices.length; i++) {
+        let vertexA = polygonVertices[i]
+        let vertexB = polygonVertices[(i + 1) % polygonVertices.length]
+
+        let edge = Vector.sub(vertexB, vertexA)
+        let axis = normalize(new Vector(-edge.y, edge.x))
+
+        let [minA, maxA] = projectVertices(polygonVertices, axis)
+        let [minB, maxB] = projectCircle(circleCenter, circleRadius, axis)
+
+        if (minA >= maxB || minB >= maxA)
+            return [false, normal, depth]
+
+        let axisDepth = Math.min(maxB - minA, maxA - minB)
+
+        if (axisDepth < depth) {
+            depth = axisDepth
+            normal = axis
+        }
+    }
+
+    let closestPoint = getClosestPointOnPolygon(circleCenter, polygonVertices)
+    let axis = normalize(Vector.sub(closestPoint, circleCenter))
+
+    let [minA, maxA] = projectVertices(polygonVertices, axis)
+    let [minB, maxB] = projectCircle(circleCenter, circleRadius, axis)
+
+    if (minA >= maxB || minB >= maxA)
+        return [false, normal, depth]
+
+    let axisDepth = Math.min(maxB - minA, maxA - minB)
+
+    if (axisDepth < depth) {
+        depth = axisDepth
+        normal = axis
+    }
+
+    let direction = Vector.sub(polygonCenter, circleCenter)
+
+    if (dot(direction, normal) < 0)
+        normal = normal.negative
+
+    return [true, normal, depth]
+}
