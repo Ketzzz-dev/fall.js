@@ -14,7 +14,7 @@ export class World {
     public static readonly MIN_ITERATIONS = 1
     public static readonly MAX_ITERATIONS = 64
 
-    private gravity = new Vector(0, 9.81 * 2)
+    private gravity = new Vector(0, 9.81)
     private bodies: Body[] = []
     private collisions: CollisionManifold[] = []
     

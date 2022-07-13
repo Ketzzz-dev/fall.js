@@ -14,6 +14,7 @@ export default {
     },
     alias: {
         '@Core': './src/Core',
+        '@Display': './src/Display',
         '@FMath': './src/FMath',
         '@Physics': './src/Physics',
         '@Geometry': './src/Geometry',
