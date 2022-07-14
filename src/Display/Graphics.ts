@@ -48,7 +48,7 @@ export class Graphics {
     }
     public drawRectLine(x: number, y: number, width: number, height: number, thickness: number, color: string): this {
         this.context.strokeStyle = color
-        this.context.lineWidth = thickness * (1 / this.renderer.camera.zoom)
+        this.context.lineWidth = thickness * (1 / this.renderer.camera.zoom) + 1
 
         x *= Renderer.UNITS_TO_PIXELS
         y *= Renderer.UNITS_TO_PIXELS
@@ -75,7 +75,7 @@ export class Graphics {
     }
     public drawCircleLine(x: number, y: number, radius: number, thickness: number, color: string): this {
         this.context.strokeStyle = color
-        this.context.lineWidth = thickness * (1 / this.renderer.camera.zoom)
+        this.context.lineWidth = thickness * (1 / this.renderer.camera.zoom) + 1
 
         x *= Renderer.UNITS_TO_PIXELS
         y *= Renderer.UNITS_TO_PIXELS
@@ -113,7 +113,7 @@ export class Graphics {
     }
     public drawPolyLine(vertices: Vector[], thickness: number, color: string): this {
         this.context.strokeStyle = color
-        this.context.lineWidth = thickness * (1 / this.renderer.camera.zoom)
+        this.context.lineWidth = thickness * (1 / this.renderer.camera.zoom) + 1
 
         this.context.beginPath()
         this.context.moveTo(
@@ -137,7 +137,7 @@ export class Graphics {
     }
     public drawLine(startX: number, startY: number, endX: number, endY: number, thickness: number, color: string): this {
         this.context.strokeStyle = color
-        this.context.lineWidth = thickness * (1 / this.renderer.camera.zoom)
+        this.context.lineWidth = thickness * (1 / this.renderer.camera.zoom) + 1
         
         this.context.moveTo(startX, startY)
         this.context.lineTo(endX, endY)

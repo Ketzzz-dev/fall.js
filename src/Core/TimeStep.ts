@@ -1,42 +1,56 @@
+import { clamp } from "@FMath/Common"
 import EventEmitter from "eventemitter3"
 
 export interface TimeStepEvents {
     'start': []
-    'step': [delta: number, time: number]
     'stop': []
+    'tick': [delta: number]
 }
 
 export class TimeStep extends EventEmitter<TimeStepEvents> {
-    private running = false
+    // Please note that this is not a fixed-timestep. Changing these values will not change the tick rate of the timestep.
+    public static readonly MIN_DELTA = 1 / 120
+    public static readonly MAX_DELTA = 1 / 12
+
+    public static readonly MAX_DELTA_HISTORY_LENGTH = 60
+
+    private delta = 0
+    private deltaHistory = Array<number>()
+
     private lastTime = 0
-    private requestHandler!: number
+    private frameRequestId = 0
 
-    private step(): void {
-        this.requestHandler = requestAnimationFrame(this.step.bind(this))
-
-        let time = performance.now()
-        let delta = (time - this.lastTime) / 1000
-
-        this.emit('step', delta, time)
-
-        this.lastTime = time
-    }
+    private running = false
 
     public start(): void {
         if (this.running)
             return
 
-        this.running = true
-
-        this.emit('start')
-
-        this.requestHandler = requestAnimationFrame(this.step.bind(this))
+        this.frameRequestId = requestAnimationFrame(this.tick.bind(this))
     }
     public stop(): void {
-        cancelAnimationFrame(this.requestHandler)
-
-        this.running = false
-
-        this.emit('stop')
+        if (!this.running)
+            return
+        
+        cancelAnimationFrame(this.frameRequestId)
     }
+    public tick(): void {
+        this.frameRequestId = requestAnimationFrame(this.tick.bind(this))
+
+        let time = performance.now() / 1000
+        let delta = time - this.lastTime
+
+        this.lastTime = time
+
+        this.deltaHistory.push(delta)
+
+        this.deltaHistory = this.deltaHistory.slice(-(TimeStep.MAX_DELTA_HISTORY_LENGTH - 1))
+        delta = Math.min(...this.deltaHistory)
+
+        delta = clamp(delta, TimeStep.MIN_DELTA, TimeStep.MAX_DELTA)
+
+        this.delta = delta
+
+        this.emit('tick', this.delta)
+    } 
 }

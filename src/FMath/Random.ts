@@ -1,4 +1,4 @@
-import { clamp } from "./Functions"
+import { clamp } from "./Common"
 
 export class Random {
     constructor(

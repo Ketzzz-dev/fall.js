@@ -7,10 +7,10 @@ import { World } from '@Physics/World'
 
 const TIME_STEP = new TimeStep()
 const WORLD = new World()
-const RENDERER = new Renderer(innerWidth, innerHeight)
+const RENDERER = new Renderer(innerWidth, 700)
 const RANDOM = new Random()
 
-const ITERATIONS = 16
+const ITERATIONS = 18
 
 document.body.appendChild(RENDERER.canvas)
 
@@ -28,12 +28,40 @@ let ground = Body.createRectangle(
 WORLD.addBody(ground)
 colours.push('green')
 
+// let topWall = Body.createRectangle(
+//     max.x - min.x, .1, new Vector(0, min.y),
+//     1, .4, true
+// )
+// let bottomWall = Body.createRectangle(
+//     max.x - min.x, .1, new Vector(0, max.y),
+//     1, .4, true
+// )
+// let leftWall = Body.createRectangle(
+//     .1, max.y - min.y, new Vector(min.x, 0),
+//     1, .4, true
+// )
+// let rightWall = Body.createRectangle(
+//     .1, max.y - min.y, new Vector(max.x, 0),
+//     1, .4, true
+// )
+
+// WORLD.addBody(topWall)
+// colours.push('white')
+// WORLD.addBody(bottomWall)
+// colours.push('white')
+// WORLD.addBody(leftWall)
+// colours.push('white')
+// WORLD.addBody(rightWall)
+// colours.push('white')
+
+// RENDERER.camera.move(new Vector(0, -160))
+
 RENDERER.canvas.onmousedown = ({ clientX, clientY, button }) => {
     let mousePosition = RENDERER.camera.screenToWorldPosition(
         new Vector(clientX, clientY)
     )
 
-    let body!: Body
+    let body: Body | void
 
     if (button == 0) {
         let width = RANDOM.float(2, 6)
@@ -46,11 +74,16 @@ RENDERER.canvas.onmousedown = ({ clientX, clientY, button }) => {
         body = Body.createCircle(radius, mousePosition, 2, .6, false)
     }
 
+    if (!body)
+        return
+
     WORLD.addBody(body)
     colours.push('#' + RANDOM.int(0x0, 0xFF).toString(16) + RANDOM.int(0x0, 0xFF).toString(16) + RANDOM.int(0x0, 0xFF).toString(16))
 }
 
-TIME_STEP.on('step', (delta, time) => {
+console.log(TIME_STEP)
+
+TIME_STEP.on('tick', (delta) => {
     for (let i = 0; i < WORLD.bodyCount; i++) {
         let body = WORLD.getBody(i)
 
@@ -58,8 +91,9 @@ TIME_STEP.on('step', (delta, time) => {
             continue
         
         let bodyBounds = body.getBounds()
+        let cameraBounds = RENDERER.camera.bounds
 
-        if (bodyBounds.min.y > innerHeight) {
+        if (bodyBounds.min.y > cameraBounds.max.y) {
             WORLD.deleteBody(body)
             colours.splice(i, 1)
         }
@@ -84,7 +118,7 @@ RENDERER.on('render', (graphics) => {
                 )
                 graphics.drawCircleLine(
                     body.position.x, body.position.y, body.radius,
-                    2, 'white'
+                    1, 'white'
                 )
 
                 break
@@ -93,12 +127,12 @@ RENDERER.on('render', (graphics) => {
                     body.getTransformedVertices(), colours[i]
                 )
                 graphics.drawPolyLine(
-                    body.getTransformedVertices(), 2, 'white'
+                    body.getTransformedVertices(), 1, 'white'
                 )
         }
     }
 })
 
-onload = () => TIME_STEP.start()
+addEventListener('load', () => TIME_STEP.start())
 
 export {}

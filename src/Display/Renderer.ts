@@ -1,4 +1,4 @@
-import { clamp } from "@FMath/Functions"
+import { clamp } from "@FMath/Common"
 import { EventEmitter } from "eventemitter3"
 import { Graphics, GraphicsDrawMethodsOnly } from "./Graphics"
 import { Camera } from "./Camera"

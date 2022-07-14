@@ -1,4 +1,4 @@
-import { clamp, dot } from "@FMath/Functions"
+import { clamp, dot } from "@FMath/Common"
 import { Vector } from "@FMath/Vector"
 import { Body, ShapeType } from "./Body"
 import { CollisionManifold } from "./CollisionManifold"

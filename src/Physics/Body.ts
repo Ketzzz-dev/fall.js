@@ -1,4 +1,4 @@
-import { clamp } from "@FMath/Functions"
+import { clamp } from "@FMath/Common"
 import { Vector } from "@FMath/Vector"
 import { AABB } from "@Geometry/AABB"
 import { Transform } from "./Transform"

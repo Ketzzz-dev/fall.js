@@ -1,4 +1,4 @@
-import { distance, dot, length, normalize } from "@FMath/Functions"
+import { distance, dot, length, normalize } from "@FMath/Common"
 import { Vector } from "@FMath/Vector"
 
 export type Intersection = [collision: boolean, normal: Vector, depth: number]

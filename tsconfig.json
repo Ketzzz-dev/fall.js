@@ -11,6 +11,7 @@
             "@FMath/*": ["./src/FMath/*"],
             "@Physics/*": ["./src/Physics/*"],
             "@Geometry/*": ["./src/Geometry/*"],
+            "@Input/*": ["./src/Input/*"],
             "@Util/*": ["./src/Util/*"]
         },
         "isolatedModules": true,
