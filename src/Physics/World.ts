@@ -2,7 +2,7 @@ import { clamp, dot } from "@FMath/Common"
 import { Vector } from "@FMath/Vector"
 import { Body, ShapeType } from "./Body"
 import { CollisionManifold } from "./CollisionManifold"
-import { intersectCirclePolygon, intersectCircles, Intersection, intersectPolygons } from "./Collisions"
+import { collide, getContactPoints, intersectCirclePolygon, intersectCircles, Intersection, intersectPolygons } from "./Collisions"
 
 export class World {
     public static readonly MIN_BODY_SIZE = 0.01 * 0.01
@@ -17,6 +17,8 @@ export class World {
     private gravity = new Vector(0, 9.81)
     private bodies: Body[] = []
     private collisions: CollisionManifold[] = []
+
+    public contactPoints: Vector[] = []
     
     public constructor() {
 
@@ -39,6 +41,8 @@ export class World {
     public step(delta: number, iterations: number): void {
         iterations = clamp(iterations, World.MIN_ITERATIONS, World.MAX_ITERATIONS)
 
+        this.contactPoints.splice(0, this.contactPoints.length)
+
         for (let it = 0; it < iterations; it++) {
             this.bodies.forEach(body => {
                 body.step(delta, this.gravity, iterations)
@@ -55,7 +59,7 @@ export class World {
                     if (bodyA.isStatic && bodyB.isStatic)
                         continue
         
-                    let [collision, normal, depth] = this.collide(bodyA, bodyB)
+                    let [collision, normal, depth] = collide(bodyA, bodyB)
 
                     if (collision) {
                         if (bodyA.isStatic)
@@ -67,7 +71,9 @@ export class World {
                             bodyB.move(Vector.mul(normal, depth * .5))
                         }
 
-                        let manifold = new CollisionManifold(bodyA, bodyB, normal, delta, [])
+                        let [contactA, contactB, contactCount] = getContactPoints(bodyA, bodyB)
+
+                        let manifold = new CollisionManifold(bodyA, bodyB, normal, delta, contactA, contactB, contactCount)
 
                         this.collisions.push(manifold)
                     }
@@ -76,6 +82,14 @@ export class World {
 
             this.collisions.forEach(collision => {
                 this.resolveCollision(collision)
+                
+                if (collision.contactCount > 0) {
+                    this.contactPoints.push(collision.contactA)
+
+                    if (collision.contactCount > 1) {
+                        this.contactPoints.push(collision.contactB)
+                    }
+                }
             })
         }
     }
@@ -97,27 +111,5 @@ export class World {
 
         bodyA.linearVelocity = Vector.sub(bodyA.linearVelocity, Vector.mul(impulse, bodyA.inverseMass))
         bodyB.linearVelocity = Vector.add(bodyB.linearVelocity, Vector.mul(impulse, bodyB.inverseMass))
-    }
-    public collide(bodyA: Body, bodyB: Body): Intersection {
-        let typeA = bodyA.type
-        let typeB = bodyB.type
-
-        if (typeA == ShapeType.Rectangle) {
-            if (typeB == ShapeType.Rectangle) {
-                return intersectPolygons(bodyA.position, bodyA.getTransformedVertices(), bodyB.position, bodyB.getTransformedVertices())
-            } else if (typeB == ShapeType.Circle) {
-                let [collision, normal, depth] = intersectCirclePolygon(bodyB.position, bodyB.radius, bodyA.position, bodyA.getTransformedVertices())
-                
-                return [collision, normal.negative, depth]
-            }
-        } else if (typeA == ShapeType.Circle) {
-            if (typeB == ShapeType.Rectangle) {
-                return intersectCirclePolygon(bodyA.position, bodyA.radius, bodyB.position, bodyB.getTransformedVertices())
-            } else if (typeB == ShapeType.Circle) {
-                return intersectCircles(bodyA.position, bodyA.radius, bodyB.position, bodyB.radius)
-            }
-        }
-
-        return [false, Vector.ZERO, 0]
     }
 }

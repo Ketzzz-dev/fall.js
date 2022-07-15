@@ -1,8 +1,10 @@
 import { distance, dot, length, normalize } from "@FMath/Common"
 import { Vector } from "@FMath/Vector"
+import { Body, ShapeType } from "./Body"
 
 export type Intersection = [collision: boolean, normal: Vector, depth: number]
 export type Projection = [min: number, max: number]
+export type ContactPoints = [contactA: Vector, contactB: Vector, contactCount: number]
 
 function getClosestPointOnPolygon(center: Vector, vertices: Vector[]): Vector {
     let point = Vector.ZERO
@@ -48,6 +50,53 @@ function projectCircle(center: Vector, radius: number, axis: Vector): Projection
     return [min, max]
 }
 
+export function collide(bodyA: Body, bodyB: Body): Intersection {
+    let typeA = bodyA.type
+    let typeB = bodyB.type
+
+    if (typeA == ShapeType.Rectangle) {
+        if (typeB == ShapeType.Rectangle) {
+            return intersectPolygons(bodyA.position, bodyA.getTransformedVertices(), bodyB.position, bodyB.getTransformedVertices())
+        } else if (typeB == ShapeType.Circle) {
+            let [collision, normal, depth] = intersectCirclePolygon(bodyB.position, bodyB.radius, bodyA.position, bodyA.getTransformedVertices())
+            
+            return [collision, normal.negative, depth]
+        }
+    } else if (typeA == ShapeType.Circle) {
+        if (typeB == ShapeType.Rectangle) {
+            return intersectCirclePolygon(bodyA.position, bodyA.radius, bodyB.position, bodyB.getTransformedVertices())
+        } else if (typeB == ShapeType.Circle) {
+            return intersectCircles(bodyA.position, bodyA.radius, bodyB.position, bodyB.radius)
+        }
+    }
+
+    return [false, Vector.ZERO, 0]
+}
+export function getContactPoints(bodyA: Body, bodyB: Body): ContactPoints {
+    let contactA = Vector.ZERO
+    let contactB = Vector.ZERO
+    let contactCount = 0
+
+    let typeA = bodyA.type
+    let typeB = bodyB.type
+
+    if (typeA == ShapeType.Rectangle) {
+        if (typeB == ShapeType.Rectangle) {
+
+        } else if (typeB == ShapeType.Circle) {
+
+        }
+    } else if (typeA == ShapeType.Circle) {
+        if (typeB == ShapeType.Rectangle) {
+            
+        } else if (typeB == ShapeType.Circle) {
+            contactA = getContactPoint(bodyA.position, bodyA.radius, bodyB.position)
+            contactCount = 1
+        }
+    }
+
+    return [contactA, contactB, contactCount]
+}
 export function intersectCircles(centerA: Vector, radiusA: number, centerB: Vector, radiusB: number): Intersection {
     let normal = Vector.ZERO
     let depth = 0
@@ -162,4 +211,12 @@ export function intersectCirclePolygon(circleCenter: Vector, circleRadius: numbe
         normal = normal.negative
 
     return [true, normal, depth]
+}
+
+function getContactPoint(centerA: Vector, radiusA: number, centerB: Vector): Vector {
+    let direction = Vector.sub(centerB, centerA)
+
+    direction = normalize(direction)
+
+    return Vector.add(centerA, Vector.mul(direction, radiusA))
 }

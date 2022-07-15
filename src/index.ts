@@ -131,6 +131,10 @@ RENDERER.on('render', (graphics) => {
                 )
         }
     }
+
+    WORLD.contactPoints.forEach(contactPoint => {
+        graphics.drawCircleFill(contactPoint.x, contactPoint.y, .5, 'orange')
+    })
 })
 
 addEventListener('load', () => TIME_STEP.start())
