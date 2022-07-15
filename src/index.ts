@@ -4,11 +4,15 @@ import { Random } from '@FMath/Random'
 import { Vector } from '@FMath/Vector'
 import { Body, ShapeType } from '@Physics/Body'
 import { World } from '@Physics/World'
+import { Keyboard } from '@Input/Keyboard'
+import { Button, Mouse } from '@Input/Mouse'
 
 const TIME_STEP = new TimeStep()
 const WORLD = new World()
 const RENDERER = new Renderer(innerWidth, 700)
 const RANDOM = new Random()
+const KEYBOARD = new Keyboard()
+const MOUSE = new Mouse()
 
 const ITERATIONS = 18
 
@@ -28,62 +32,29 @@ let ground = Body.createRectangle(
 WORLD.addBody(ground)
 colours.push('green')
 
-// let topWall = Body.createRectangle(
-//     max.x - min.x, .1, new Vector(0, min.y),
-//     1, .4, true
-// )
-// let bottomWall = Body.createRectangle(
-//     max.x - min.x, .1, new Vector(0, max.y),
-//     1, .4, true
-// )
-// let leftWall = Body.createRectangle(
-//     .1, max.y - min.y, new Vector(min.x, 0),
-//     1, .4, true
-// )
-// let rightWall = Body.createRectangle(
-//     .1, max.y - min.y, new Vector(max.x, 0),
-//     1, .4, true
-// )
+TIME_STEP.on('tick', (delta) => {
+    if (MOUSE.isButtonDown(Button.Left)) {
+        let mousePosition = RENDERER.camera.screenToWorldPosition(MOUSE.position)
 
-// WORLD.addBody(topWall)
-// colours.push('white')
-// WORLD.addBody(bottomWall)
-// colours.push('white')
-// WORLD.addBody(leftWall)
-// colours.push('white')
-// WORLD.addBody(rightWall)
-// colours.push('white')
-
-// RENDERER.camera.move(new Vector(0, -160))
-
-RENDERER.canvas.onmousedown = ({ clientX, clientY, button }) => {
-    let mousePosition = RENDERER.camera.screenToWorldPosition(
-        new Vector(clientX, clientY)
-    )
-
-    let body: Body | void
-
-    if (button == 0) {
         let width = RANDOM.float(2, 6)
         let height = RANDOM.float(2, 6)
 
-        body = Body.createRectangle(width, height, mousePosition, 2, .6, false)
-    } else if (button == 2) {
+        let body = Body.createRectangle(width, height, mousePosition, 2, .6, false)
+
+        WORLD.addBody(body)
+        colours.push('#' + RANDOM.int(0x0, 0xFF).toString(16) + RANDOM.int(0x0, 0xFF).toString(16) + RANDOM.int(0x0, 0xFF).toString(16))
+    } else if (MOUSE.isButtonDown(Button.Right)) {
+        let mousePosition = RENDERER.camera.screenToWorldPosition(MOUSE.position)
+
         let radius = RANDOM.float(1, 3)
 
-        body = Body.createCircle(radius, mousePosition, 2, .6, false)
+        let body = Body.createCircle(radius, mousePosition, 2, .6, false)
+
+        WORLD.addBody(body)
+        colours.push('#' + RANDOM.int(0x0, 0xFF).toString(16) + RANDOM.int(0x0, 0xFF).toString(16) + RANDOM.int(0x0, 0xFF).toString(16))
+
     }
 
-    if (!body)
-        return
-
-    WORLD.addBody(body)
-    colours.push('#' + RANDOM.int(0x0, 0xFF).toString(16) + RANDOM.int(0x0, 0xFF).toString(16) + RANDOM.int(0x0, 0xFF).toString(16))
-}
-
-console.log(TIME_STEP)
-
-TIME_STEP.on('tick', (delta) => {
     for (let i = 0; i < WORLD.bodyCount; i++) {
         let body = WORLD.getBody(i)
 
@@ -100,6 +71,8 @@ TIME_STEP.on('tick', (delta) => {
     }
 
     WORLD.step(delta, ITERATIONS)
+    KEYBOARD.update()
+    MOUSE.update()
     RENDERER.update()
 })
 

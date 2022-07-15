@@ -2,8 +2,6 @@ import { clamp } from "@FMath/Common"
 import { EventEmitter } from "eventemitter3"
 import { Graphics, GraphicsDrawMethodsOnly } from "./Graphics"
 import { Camera } from "./Camera"
-import { AABB } from "@Geometry/AABB"
-import { Vector } from "@FMath/Vector"
 
 export interface RendererEvents {
     'render': [graphics: GraphicsDrawMethodsOnly]
@@ -36,12 +34,6 @@ export class Renderer extends EventEmitter<RendererEvents> {
             e.preventDefault()
             e.stopPropagation()
         }
-    }
-    public get bounds(): AABB {
-        return new AABB(
-            new Vector(0, 0),
-            new Vector(this.canvas.width, this.canvas.height)
-        )
     }
 
     public update(): void {
