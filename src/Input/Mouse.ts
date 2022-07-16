@@ -13,15 +13,16 @@ export class Mouse {
 
     public position = Vector.ZERO
 
-    public constructor() {
-        onmousedown = this.handleMouseDownUp.bind(this)
-        onmouseup = this.handleMouseDownUp.bind(this)
+    public constructor(screen: Renderer) {
+        screen.canvas.onmousedown = this.handleMouseDownUp.bind(this)
+        screen.canvas.onmouseup = this.handleMouseDownUp.bind(this)
 
-        onmousemove = this.handleMouseMove.bind(this)
+        screen.canvas.onmousemove = this.handleMouseMove.bind(this)
     }
 
     private handleMouseDownUp(event: MouseEvent): void {
         event.preventDefault()
+        event.stopPropagation()
 
         let state = event.type == 'mousedown'
 

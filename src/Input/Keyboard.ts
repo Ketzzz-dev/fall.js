@@ -1,3 +1,4 @@
+import { Renderer } from "@Display/Renderer"
 
 export interface KeyStates extends Record<string, boolean> {}
 
@@ -5,9 +6,9 @@ export class Keyboard {
     private states: KeyStates = {}
     private previousStates: KeyStates = {}
 
-    public constructor() {
-        onkeydown = this.handleKeyDownUp.bind(this)
-        onkeyup = this.handleKeyDownUp.bind(this)
+    public constructor(screen: Renderer) {
+        screen.canvas.onkeydown = this.handleKeyDownUp.bind(this)
+        screen.canvas.onkeyup = this.handleKeyDownUp.bind(this)
     }
 
     private handleKeyDownUp(event: KeyboardEvent): void {

@@ -11,8 +11,8 @@ const TIME_STEP = new TimeStep()
 const WORLD = new World()
 const RENDERER = new Renderer(innerWidth, 700)
 const RANDOM = new Random()
-const KEYBOARD = new Keyboard()
-const MOUSE = new Mouse()
+const KEYBOARD = new Keyboard(RENDERER)
+const MOUSE = new Mouse(RENDERER)
 
 const ITERATIONS = 18
 
@@ -65,11 +65,12 @@ TIME_STEP.on('tick', (delta) => {
         let cameraBounds = RENDERER.camera.bounds
 
         if (bodyBounds.min.y > cameraBounds.max.y) {
-            WORLD.deleteBody(body)
-            colours.splice(i, 1)
+            body.moveTo(
+                new Vector(0, min.y)
+            )
         }
     }
-
+    
     WORLD.step(delta, ITERATIONS)
     KEYBOARD.update()
     MOUSE.update()
@@ -104,10 +105,6 @@ RENDERER.on('render', (graphics) => {
                 )
         }
     }
-
-    WORLD.contactPoints.forEach(contactPoint => {
-        graphics.drawCircleFill(contactPoint.x, contactPoint.y, .5, 'orange')
-    })
 })
 
 addEventListener('load', () => TIME_STEP.start())
