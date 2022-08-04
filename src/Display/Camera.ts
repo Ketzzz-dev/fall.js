@@ -1,6 +1,6 @@
 import { Vector } from "@FMath/Vector"
 import { AABB } from "@Geometry/AABB"
-import { Renderer } from "./Renderer"
+import { Renderer } from "../Core/Renderer"
 
 export class Camera {
     private renderer: Renderer
@@ -8,7 +8,7 @@ export class Camera {
     public position: Vector
     public zoom: number
 
-    public constructor(renderer: Renderer) {
+    public constructor (renderer: Renderer) {
         this.renderer = renderer
 
         this.position = Vector.ZERO
@@ -23,8 +23,8 @@ export class Camera {
         let bottom = top + canvas.height
 
         return new AABB(
-            new Vector(left / this.zoom / Renderer.UNITS_TO_PIXELS, top / this.zoom / Renderer.UNITS_TO_PIXELS),
-            new Vector(right / this.zoom / Renderer.UNITS_TO_PIXELS, bottom / this.zoom / Renderer.UNITS_TO_PIXELS)
+            new Vector(left / this.zoom / Renderer.PIXELS_PER_UNIT, top / this.zoom / Renderer.PIXELS_PER_UNIT),
+            new Vector(right / this.zoom / Renderer.PIXELS_PER_UNIT, bottom / this.zoom / Renderer.PIXELS_PER_UNIT)
         )
     }
 
@@ -35,12 +35,9 @@ export class Camera {
         let relativeY = v.y + this.position.y - .5 * canvas.height
 
         return new Vector(
-            relativeX / this.zoom / Renderer.UNITS_TO_PIXELS,
-            relativeY / this.zoom / Renderer.UNITS_TO_PIXELS
+            relativeX / this.zoom / Renderer.PIXELS_PER_UNIT,
+            relativeY / this.zoom / Renderer.PIXELS_PER_UNIT
         )
-    }
-    public worldToScreenPosition(v: Vector): Vector {
-        throw 'implement me'
     }
 
     public move(v: Vector): void {

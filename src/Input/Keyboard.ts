@@ -1,4 +1,4 @@
-import { Renderer } from "@Display/Renderer"
+import { Renderer } from "@Core/Renderer"
 
 export interface KeyStates extends Record<string, boolean> {}
 

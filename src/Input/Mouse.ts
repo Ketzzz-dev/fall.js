@@ -1,4 +1,4 @@
-import { Renderer } from "@Display/Renderer"
+import { Renderer } from "@Core/Renderer"
 import { Vector } from "@FMath/Vector"
 
 export interface ButtonStates extends Record<number, boolean> {}

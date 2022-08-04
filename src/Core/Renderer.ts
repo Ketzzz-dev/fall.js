@@ -1,14 +1,14 @@
 import { clamp } from "@FMath/Common"
 import { EventEmitter } from "eventemitter3"
-import { Graphics, GraphicsDrawMethodsOnly } from "./Graphics"
-import { Camera } from "./Camera"
+import { Graphics } from "../Display/Graphics"
+import { Camera } from "../Display/Camera"
 
 export interface RendererEvents {
-    'render': [graphics: GraphicsDrawMethodsOnly]
+    'render': [graphics: Graphics]
 }
 
 export class Renderer extends EventEmitter<RendererEvents> {
-    public static readonly UNITS_TO_PIXELS = 16
+    public static readonly PIXELS_PER_UNIT = 16
     public static readonly MIN_DIMENSION = 64
     public static readonly MAX_DIMENSION = 2048
 
@@ -16,7 +16,7 @@ export class Renderer extends EventEmitter<RendererEvents> {
     public readonly camera: Camera
     public readonly canvas: HTMLCanvasElement
 
-    public constructor(width: number, height: number) {
+    public constructor (width: number, height: number) {
         super()
 
         this.canvas = document.createElement('canvas')
@@ -37,7 +37,7 @@ export class Renderer extends EventEmitter<RendererEvents> {
     }
 
     public update(): void {
-        this.graphics.beginDrawing()
+        this.graphics.startDrawing()
 
         this.emit('render', this.graphics)
 

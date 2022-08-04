@@ -1,4 +1,4 @@
-import { Renderer } from '@Display/Renderer'
+import { Renderer } from '@Core/Renderer'
 import { TimeStep } from '@Core/TimeStep'
 import { Random } from '@FMath/Random'
 import { Vector } from '@FMath/Vector'
@@ -105,6 +105,12 @@ RENDERER.on('render', (graphics) => {
                 )
         }
     }
+
+    let { camera } = RENDERER
+    let { min, max } = camera.bounds
+ 
+    graphics.drawText('hello', min.x + 1, min.y + 3, '50px bold', 'white')
+
 })
 
 addEventListener('load', () => TIME_STEP.start())

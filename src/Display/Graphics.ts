@@ -1,14 +1,15 @@
 import { Vector } from "@FMath/Vector"
-import { Renderer } from "./Renderer"
+import { Renderer } from "../Core/Renderer"
 import assert from "assert"
 
-export interface GraphicsDrawMethodsOnly extends Omit<Graphics, 'beginDrawing' | 'endDrawing'> {}
 
 export class Graphics {
     private renderer: Renderer
     private context: CanvasRenderingContext2D
 
-    public constructor(renderer: Renderer) {
+    private isDrawing = false
+
+    public constructor (renderer: Renderer) {
         this.renderer = renderer
 
         let context = this.renderer.canvas.getContext('2d')
@@ -18,29 +19,36 @@ export class Graphics {
         this.context = context
     }
 
-    public beginDrawing(): void {
-        let { canvas, camera } = this.renderer
+    public startDrawing(): void {
+        if (this.isDrawing)
+            return
 
-        this.context.save()
-        this.context.clearRect(0, 0, canvas.width, canvas.height)
+        this.isDrawing = true
+
+        let { camera, canvas } = this.renderer
 
         let cameraScreenX = .5 * canvas.width - camera.position.x
         let cameraScreenY = .5 * canvas.height - camera.position.y
 
-        this.context.translate(cameraScreenX, cameraScreenY)
-        this.context.scale(camera.zoom, camera.zoom)
+        this.context.clearRect(0, 0, canvas.width, canvas.height)
+        this.context.setTransform(camera.zoom, 0, 0, camera.zoom, cameraScreenX, cameraScreenY)
     }
     public endDrawing(): void {
-        this.context.restore()
+        if (!this.isDrawing)
+            return
+
+        this.isDrawing = false
+
+        this.context.resetTransform()
     }
 
     public drawRectFill(x: number, y: number, width: number, height: number, color: string): this {
         this.context.fillStyle = color
 
-        x *= Renderer.UNITS_TO_PIXELS
-        y *= Renderer.UNITS_TO_PIXELS
-        width *= Renderer.UNITS_TO_PIXELS
-        height *= Renderer.UNITS_TO_PIXELS
+        x *= Renderer.PIXELS_PER_UNIT
+        y *= Renderer.PIXELS_PER_UNIT
+        width *= Renderer.PIXELS_PER_UNIT
+        height *= Renderer.PIXELS_PER_UNIT
 
         this.context.fillRect(x, y, width, height)
 
@@ -50,10 +58,10 @@ export class Graphics {
         this.context.strokeStyle = color
         this.context.lineWidth = thickness * (1 / this.renderer.camera.zoom) + 1
 
-        x *= Renderer.UNITS_TO_PIXELS
-        y *= Renderer.UNITS_TO_PIXELS
-        width *= Renderer.UNITS_TO_PIXELS
-        height *= Renderer.UNITS_TO_PIXELS
+        x *= Renderer.PIXELS_PER_UNIT
+        y *= Renderer.PIXELS_PER_UNIT
+        width *= Renderer.PIXELS_PER_UNIT
+        height *= Renderer.PIXELS_PER_UNIT
 
         this.context.strokeRect(x, y, width, height)
 
@@ -62,9 +70,9 @@ export class Graphics {
     public drawCircleFill(x: number, y: number, radius: number, color: string): this {
         this.context.fillStyle = color
 
-        x *= Renderer.UNITS_TO_PIXELS
-        y *= Renderer.UNITS_TO_PIXELS
-        radius *= Renderer.UNITS_TO_PIXELS
+        x *= Renderer.PIXELS_PER_UNIT
+        y *= Renderer.PIXELS_PER_UNIT
+        radius *= Renderer.PIXELS_PER_UNIT
 
         this.context.beginPath()
         this.context.arc(x, y, radius, 0, Math.PI * 2)
@@ -77,9 +85,9 @@ export class Graphics {
         this.context.strokeStyle = color
         this.context.lineWidth = thickness * (1 / this.renderer.camera.zoom) + 1
 
-        x *= Renderer.UNITS_TO_PIXELS
-        y *= Renderer.UNITS_TO_PIXELS
-        radius *= Renderer.UNITS_TO_PIXELS
+        x *= Renderer.PIXELS_PER_UNIT
+        y *= Renderer.PIXELS_PER_UNIT
+        radius *= Renderer.PIXELS_PER_UNIT
 
         this.context.beginPath()
         this.context.arc(x, y, radius, 0, Math.PI * 2)
@@ -93,16 +101,16 @@ export class Graphics {
 
         this.context.beginPath()
         this.context.moveTo(
-            vertices[0].x * Renderer.UNITS_TO_PIXELS,
-            vertices[0].y * Renderer.UNITS_TO_PIXELS
+            vertices[0].x * Renderer.PIXELS_PER_UNIT,
+            vertices[0].y * Renderer.PIXELS_PER_UNIT
         )
 
         for (let i = 1; i < vertices.length; i++) {
             let vertex = vertices[i]
 
             this.context.lineTo(
-                vertex.x * Renderer.UNITS_TO_PIXELS,
-                vertex.y * Renderer.UNITS_TO_PIXELS
+                vertex.x * Renderer.PIXELS_PER_UNIT,
+                vertex.y * Renderer.PIXELS_PER_UNIT
             )
         }
 
@@ -117,16 +125,16 @@ export class Graphics {
 
         this.context.beginPath()
         this.context.moveTo(
-            vertices[0].x * Renderer.UNITS_TO_PIXELS,
-            vertices[0].y * Renderer.UNITS_TO_PIXELS
+            vertices[0].x * Renderer.PIXELS_PER_UNIT,
+            vertices[0].y * Renderer.PIXELS_PER_UNIT
         )
 
         for (let i = 1; i < vertices.length; i++) {
             let vertex = vertices[i]
 
             this.context.lineTo(
-                vertex.x * Renderer.UNITS_TO_PIXELS,
-                vertex.y * Renderer.UNITS_TO_PIXELS
+                vertex.x * Renderer.PIXELS_PER_UNIT,
+                vertex.y * Renderer.PIXELS_PER_UNIT
             )
         }
         
@@ -138,10 +146,26 @@ export class Graphics {
     public drawLine(startX: number, startY: number, endX: number, endY: number, thickness: number, color: string): this {
         this.context.strokeStyle = color
         this.context.lineWidth = thickness * (1 / this.renderer.camera.zoom) + 1
+
+        startX *= Renderer.PIXELS_PER_UNIT
+        startY *= Renderer.PIXELS_PER_UNIT
+        endX *= Renderer.PIXELS_PER_UNIT
+        endY *= Renderer.PIXELS_PER_UNIT
         
         this.context.moveTo(startX, startY)
         this.context.lineTo(endX, endY)
         this.context.stroke()
+
+        return this
+    }
+    public drawText(text: string, x: number, y: number, font: string, color: string): this {
+        this.context.font = font
+        this.context.fillStyle = color
+
+        x *= Renderer.PIXELS_PER_UNIT
+        y *= Renderer.PIXELS_PER_UNIT
+
+        this.context.fillText(text, x, y)
 
         return this
     }
