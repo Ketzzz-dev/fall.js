@@ -1,7 +1,16 @@
 import { Vector } from "./Vector"
 
+export function lengthSqrd(v: Vector): number {
+    return v.x * v.x + v.y * v.y
+}
 export function length(v: Vector): number {
     return Math.sqrt(v.x * v.x + v.y * v.y)
+}
+export function distanceSqrd(a: Vector, b: Vector): number {
+    let dX = a.x - b.x
+    let dY = a.y - b.y
+
+    return dX * dX + dY * dY
 }
 export function distance(a: Vector, b: Vector): number {
     let dX = a.x - b.x

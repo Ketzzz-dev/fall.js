@@ -69,9 +69,8 @@ TIME_STEP.on('tick', (delta) => {
         let cameraBounds = RENDERER.camera.bounds
 
         if (bodyBounds.min.y > cameraBounds.max.y) {
-            body.moveTo(
-                new Vector(0, min.y)
-            )
+            WORLD.deleteBody(body)
+            colours.splice(i, 1)
         }
     }
     
@@ -119,6 +118,10 @@ RENDERER.on('render', (graphics) => {
                     body.getTransformedVertices(), 1, 'white'
                 )
         }
+    }
+
+    for (let contact of WORLD.contactPoints) {
+        graphics.drawCircleLine(contact.x, contact.y, .25, 1, 'red')
     }
 
     let { min } = RENDERER.camera.bounds

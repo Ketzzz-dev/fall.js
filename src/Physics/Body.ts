@@ -4,6 +4,8 @@ import { AABB } from "@Geometry/AABB"
 import { Transform } from "./Transform"
 import { World } from "./World"
 
+// THIS CODE IS ALSO VERY UGLY, PLEASE WAIT UNTIL I REFORMAT THIS
+
 export enum ShapeType {
     Circle, Rectangle
 }

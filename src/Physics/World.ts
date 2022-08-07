@@ -17,6 +17,8 @@ export class World {
     private gravity = new Vector(0, 9.81)
     private bodies: Body[] = []
     private collisions: CollisionManifold[] = []
+
+    public contactPoints = Array<Vector>()
     
     public constructor() {
 
@@ -38,6 +40,8 @@ export class World {
 
     public step(delta: number, iterations: number): void {
         iterations = clamp(iterations, World.MIN_ITERATIONS, World.MAX_ITERATIONS)
+
+        this.contactPoints.splice(0, this.contactPoints.length)
 
         for (let it = 0; it < iterations; it++) {
             this.bodies.forEach(body => {
@@ -80,6 +84,16 @@ export class World {
 
             this.collisions.forEach(collision => {
                 this.resolveCollision(collision)
+
+                if (collision.contactCount > 0) {
+                    if (!this.contactPoints.includes(collision.contactA))
+                        this.contactPoints.push(collision.contactA)
+
+                    if (collision.contactCount > 1) {
+                        if (!this.contactPoints.includes(collision.contactB))
+                            this.contactPoints.push(collision.contactB)
+                    }
+                }
             })
         }
     }

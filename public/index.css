@@ -4,5 +4,9 @@
 }
 
 body {
-    background-color: #0d0e17;
+    background-color: black;
+}
+
+canvas {
+    background-color: #07070C;
 }

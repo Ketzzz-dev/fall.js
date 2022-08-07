@@ -1,7 +1,9 @@
-import { distance, dot, length, normalize } from "@FMath/Common"
+import { distance, distanceSqrd, dot, lengthSqrd, normalize } from "@FMath/Common"
 import { Vector } from "@FMath/Vector"
 import { AABB } from '@Geometry/AABB'
 import { Body, ShapeType } from "./Body"
+
+// THIS CODE IS VERY UGLY, PLEASE IGNORE FOR NOW AS I WILL REFORMAT AND OPTIMISE EVERYTHING
 
 export type Intersection = [collision: boolean, normal: Vector, depth: number]
 export type Projection = [min: number, max: number]
@@ -50,6 +52,24 @@ function projectCircle(center: Vector, radius: number, axis: Vector): Projection
 
     return [min, max]
 }
+function pointSegmentDistance(p: Vector, a: Vector, b: Vector): [distanceSqrd: number, closestPoint: Vector] {
+    let closestPoint = Vector.ZERO
+
+    let ab = Vector.sub(b, a)
+    let ap = Vector.sub(p, a)
+
+    let proj = dot(ap, ab)
+    let d = proj / lengthSqrd(ab)
+
+    if (d <= 0)
+        closestPoint = a
+    else if (d >= 1)
+        closestPoint = b
+    else
+        closestPoint = Vector.add(a, Vector.mul(ab, d))
+
+    return [distanceSqrd(p, closestPoint), closestPoint]
+}
 
 export function collide(bodyA: Body, bodyB: Body): Intersection {
     let typeA = bodyA.type
@@ -83,15 +103,17 @@ export function getContactPoints(bodyA: Body, bodyB: Body): ContactPoints {
 
     if (typeA == ShapeType.Rectangle) {
         if (typeB == ShapeType.Rectangle) {
-
+            [contactA, contactB, contactCount] = getPolygonsContactPoints(bodyA.getTransformedVertices(), bodyB.getTransformedVertices())
         } else if (typeB == ShapeType.Circle) {
-
+            contactA = getCirclePoygonContactPoint(bodyB.position, bodyB.radius, bodyA.position, bodyA.getTransformedVertices())
+            contactCount = 1
         }
     } else if (typeA == ShapeType.Circle) {
         if (typeB == ShapeType.Rectangle) {
-            
+            contactA = getCirclePoygonContactPoint(bodyA.position, bodyA.radius, bodyB.position, bodyB.getTransformedVertices())
+            contactCount = 1
         } else if (typeB == ShapeType.Circle) {
-            contactA = getContactPoint(bodyA.position, bodyA.radius, bodyB.position)
+            contactA = getCirclesContactPoint(bodyA.position, bodyA.radius, bodyB.position)
             contactCount = 1
         }
     }
@@ -218,10 +240,81 @@ export function intersectAABBs(a: AABB, b: AABB): boolean {
         a.max.y > b.min.y && a.min.y < b.max.y
 }
 
-function getContactPoint(centerA: Vector, radiusA: number, centerB: Vector): Vector {
+function getCirclesContactPoint(centerA: Vector, radiusA: number, centerB: Vector): Vector {
     let direction = Vector.sub(centerB, centerA)
 
     direction = normalize(direction)
 
     return Vector.add(centerA, Vector.mul(direction, radiusA))
 }
+function getCirclePoygonContactPoint(circleCenter: Vector, circleRadius: number, polygonCenter: Vector, polygonVertices: Vector[]): Vector {
+    let minDistance = Number.MAX_VALUE
+    let contactPoint = Vector.ZERO
+
+    for (let i = 0; i < polygonVertices.length; i++) {
+        let vertexA = polygonVertices[i]
+        let vertexB = polygonVertices[(i + 1) % polygonVertices.length]
+
+        let [distSqrd, contact] = pointSegmentDistance(circleCenter, vertexA, vertexB)
+
+        if (distSqrd < minDistance) {
+            minDistance = distSqrd
+            contactPoint = contact
+        }
+    }
+
+    return contactPoint
+}
+function getPolygonsContactPoints(verticesA: Vector[], verticesB: Vector[]): ContactPoints {
+    let contactA = Vector.ZERO
+    let contactB = Vector.ZERO
+    let contactCount = 0
+
+    let minDistance = Number.MAX_VALUE
+
+    for (let i = 0; i < verticesA.length; i++) {
+        let p = verticesA[i]
+
+        for (let j = 0; j < verticesB.length; j++) {
+            let vertexA = verticesB[j]
+            let vertexB = verticesB[(j + 1) % verticesB.length]
+
+            let [distSqrd, contact] = pointSegmentDistance(p, vertexA, vertexB)
+
+            if (Math.abs(distSqrd - minDistance) < 0.00005) {
+                if (Math.abs(contact.x - contactA.x) >= 0.00005 || Math.abs(contact.y - contactA.y) >= 0.00005) {
+                    contactB = contact
+                    contactCount = 2
+                }
+            } else if (distSqrd < minDistance) {
+                minDistance = distSqrd
+                contactA = contact
+                contactCount = 1
+            }
+        }
+    }
+    for (let i = 0; i < verticesB.length; i++) {
+        let p = verticesB[i]
+
+        for (let j = 0; j < verticesA.length; j++) {
+            let vertexA = verticesA[j]
+            let vertexB = verticesA[(j + 1) % verticesA.length]
+
+            let [distSqrd, contact] = pointSegmentDistance(p, vertexA, vertexB)
+
+            if (Math.abs(distSqrd - minDistance) < 0.0005) {
+                if (Math.abs(contact.x - contactA.x) >= 0.0005 || Math.abs(contact.y - contactA.y) >= 0.0005) {
+                    contactB = contact
+                    contactCount = 2
+                }
+            } else if (distSqrd < minDistance) {
+                minDistance = distSqrd
+                contactA = contact
+                contactCount = 1
+            }
+        }
+    }
+
+    return [contactA, contactB, contactCount]
+}
+
