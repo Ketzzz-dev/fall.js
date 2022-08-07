@@ -29,6 +29,10 @@ let ground = Body.createRectangle(
     1, .5, true
 )
 
+let lastFrameIndex = 0
+let frameDeltaTimeArray = Array<number>()
+let fps = 0
+
 WORLD.addBody(ground)
 colours.push('green')
 
@@ -72,6 +76,17 @@ TIME_STEP.on('tick', (delta) => {
     }
     
     WORLD.step(delta, ITERATIONS)
+
+    frameDeltaTimeArray[lastFrameIndex] = delta
+    lastFrameIndex = (lastFrameIndex + 1) % frameDeltaTimeArray.length
+
+    let total = 0
+
+    for (let deltaTime of frameDeltaTimeArray)
+        total += deltaTime
+
+    fps = frameDeltaTimeArray.length / total
+
     KEYBOARD.update()
     MOUSE.update()
     RENDERER.update()
@@ -106,13 +121,26 @@ RENDERER.on('render', (graphics) => {
         }
     }
 
-    let { camera } = RENDERER
-    let { min, max } = camera.bounds
- 
-    graphics.drawText('hello', min.x + 1, min.y + 3, '50px bold', 'white')
+    let { min } = RENDERER.camera.bounds
 
+    graphics.drawText(`FPS: ${Math.round(fps).toString()}`, min.x + 1, min.y + 2, 'bold 25px sans-serif', 'white')
+    graphics.drawText(`Bodies: ${WORLD.bodyCount}`, min.x + 1, min.y + 4, 'bold 25px sans-serif', 'white')
 })
 
 addEventListener('load', () => TIME_STEP.start())
 
-export {}
+export * from '@Core/Renderer'
+export * from '@Core/TimeStep'
+export * from '@Display/Camera'
+export * from '@Display/Graphics'
+export * from '@FMath/Common'
+export * from '@FMath/Random'
+export * from '@FMath/Vector'
+export * from '@Geometry/AABB'
+export * from '@Input/Keyboard'
+export * from '@Input/Mouse'
+export * from '@Physics/Body'
+export * from '@Physics/CollisionManifold'
+export * from '@Physics/Collisions'
+export * from '@Physics/Transform'
+export * from '@Physics/World'

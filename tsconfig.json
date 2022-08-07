@@ -20,7 +20,8 @@
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
         "resolveJsonModule": true,
-        "useDefineForClassFields": true
+        "useDefineForClassFields": true,
+        "noImplicitOverride": true
     },
     "include": ["src", "types"],
     "exclude": ["node_modules"]

@@ -1,5 +1,6 @@
 import { distance, dot, length, normalize } from "@FMath/Common"
 import { Vector } from "@FMath/Vector"
+import { AABB } from '@Geometry/AABB'
 import { Body, ShapeType } from "./Body"
 
 export type Intersection = [collision: boolean, normal: Vector, depth: number]
@@ -211,6 +212,10 @@ export function intersectCirclePolygon(circleCenter: Vector, circleRadius: numbe
         normal = normal.negative
 
     return [true, normal, depth]
+}
+export function intersectAABBs(a: AABB, b: AABB): boolean {
+    return a.max.x > b.min.x && a.min.x < b.max.x &&
+        a.max.y > b.min.y && a.min.y < b.max.y
 }
 
 function getContactPoint(centerA: Vector, radiusA: number, centerB: Vector): Vector {

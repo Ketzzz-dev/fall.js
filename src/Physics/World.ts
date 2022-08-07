@@ -2,7 +2,7 @@ import { clamp, dot } from "@FMath/Common"
 import { Vector } from "@FMath/Vector"
 import { Body, ShapeType } from "./Body"
 import { CollisionManifold } from "./CollisionManifold"
-import { collide, getContactPoints, intersectCirclePolygon, intersectCircles, Intersection, intersectPolygons } from "./Collisions"
+import { collide, getContactPoints, intersectAABBs, intersectCirclePolygon, intersectCircles, Intersection, intersectPolygons } from "./Collisions"
 
 export class World {
     public static readonly MIN_BODY_SIZE = 0.01 * 0.01
@@ -53,6 +53,8 @@ export class World {
                     let bodyB = this.bodies[j]
 
                     if (bodyA.isStatic && bodyB.isStatic)
+                        continue
+                    if (!intersectAABBs(bodyA.getBounds(), bodyB.getBounds()))
                         continue
         
                     let [collision, normal, depth] = collide(bodyA, bodyB)
