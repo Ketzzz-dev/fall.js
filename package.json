@@ -2,11 +2,11 @@
   "name": "fall.js",
   "version": "1.0.1",
   "description": "A standard Javascipt physics engine.",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "start": "snowpack dev",
-    "build": "snowpack build",
-    "tsc-build": "tsc"
+    "build": "tsc && snowpack build"
   },
   "repository": {
     "type": "git",

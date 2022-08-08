@@ -3,7 +3,7 @@
         "module": "esnext",
         "target": "esnext",
         "moduleResolution": "node",
-        "allowSyntheticDefaultImports": true,
+        "outDir": "./dist",
         "baseUrl": "./",
         "paths": {
             "@Core/*": ["./src/Core/*"],
@@ -15,13 +15,16 @@
             "@Util/*": ["./src/Util/*"]
         },
         "isolatedModules": true,
+        "declaration": true,
         "noEmit": true,
         "strict": true,
         "skipLibCheck": true,
+        "allowSyntheticDefaultImports": true,
         "forceConsistentCasingInFileNames": true,
         "resolveJsonModule": true,
         "useDefineForClassFields": true,
-        "noImplicitOverride": true
+        "noImplicitOverride": true,
+        "noImplicitReturns": true
     },
     "include": ["src", "types"],
     "exclude": ["node_modules"]

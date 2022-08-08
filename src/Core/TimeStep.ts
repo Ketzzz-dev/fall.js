@@ -12,7 +12,7 @@ export class TimeStep extends EventEmitter<TimeStepEvents> {
     public static readonly MIN_DELTA = 1 / 120
     public static readonly MAX_DELTA = 1 / 12
 
-    public static readonly MAX_DELTA_HISTORY_LENGTH = 60
+    public static readonly MAX_DELTA_HISTORY_LENGTH = 100
 
     private delta = 0
     private deltaHistory = Array<number>()
@@ -44,7 +44,7 @@ export class TimeStep extends EventEmitter<TimeStepEvents> {
 
         this.deltaHistory.push(delta)
 
-        this.deltaHistory = this.deltaHistory.slice(-(TimeStep.MAX_DELTA_HISTORY_LENGTH - 1))
+        this.deltaHistory = this.deltaHistory.slice(-TimeStep.MAX_DELTA_HISTORY_LENGTH)
         delta = Math.min(...this.deltaHistory)
 
         delta = clamp(delta, TimeStep.MIN_DELTA, TimeStep.MAX_DELTA)

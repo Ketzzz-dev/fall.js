@@ -6,6 +6,7 @@ import { Body, ShapeType } from '@Physics/Body'
 import { World } from '@Physics/World'
 import { Keyboard } from '@Input/Keyboard'
 import { Button, Mouse } from '@Input/Mouse'
+import { intersectAABBs } from '@Physics/Collisions'
 
 const TIME_STEP = new TimeStep()
 const WORLD = new World()
@@ -15,6 +16,16 @@ const KEYBOARD = new Keyboard(RENDERER)
 const MOUSE = new Mouse(RENDERER)
 
 const ITERATIONS = 18
+
+const DEFAULT_COLOURS = {
+    red: '#E06C75',
+    green: '#98C379',
+    yellow: '#E5C07B',
+    blue: '#61AFEF',
+    purple: '#C678DD',
+    cyan: '#56B6C2',
+    white: '#DCDFE4'
+}
 
 document.body.appendChild(RENDERER.canvas)
 
@@ -29,12 +40,10 @@ let ground = Body.createRectangle(
     1, .5, true
 )
 
-let lastFrameIndex = 0
-let frameDeltaTimeArray = Array<number>()
 let fps = 0
 
 WORLD.addBody(ground)
-colours.push('green')
+colours.push('#98C379')
 
 TIME_STEP.on('tick', (delta) => {
     if (MOUSE.isButtonDown(Button.Left)) {
@@ -46,7 +55,10 @@ TIME_STEP.on('tick', (delta) => {
         let body = Body.createRectangle(width, height, mousePosition, 2, .6, false)
 
         WORLD.addBody(body)
-        colours.push('#' + RANDOM.int(0x0, 0xFF).toString(16) + RANDOM.int(0x0, 0xFF).toString(16) + RANDOM.int(0x0, 0xFF).toString(16))
+        
+        let keys = Object.keys(DEFAULT_COLOURS) as (keyof typeof DEFAULT_COLOURS)[]
+
+        colours.push(DEFAULT_COLOURS[keys[RANDOM.int(0, keys.length)]])
     } else if (MOUSE.isButtonDown(Button.Right)) {
         let mousePosition = RENDERER.camera.screenToWorldPosition(MOUSE.position)
 
@@ -55,8 +67,10 @@ TIME_STEP.on('tick', (delta) => {
         let body = Body.createCircle(radius, mousePosition, 2, .6, false)
 
         WORLD.addBody(body)
-        colours.push('#' + RANDOM.int(0x0, 0xFF).toString(16) + RANDOM.int(0x0, 0xFF).toString(16) + RANDOM.int(0x0, 0xFF).toString(16))
 
+        let keys = Object.keys(DEFAULT_COLOURS) as (keyof typeof DEFAULT_COLOURS)[]
+
+        colours.push(DEFAULT_COLOURS[keys[RANDOM.int(0, keys.length - 1)]])
     }
 
     for (let i = 0; i < WORLD.bodyCount; i++) {
@@ -76,15 +90,13 @@ TIME_STEP.on('tick', (delta) => {
     
     WORLD.step(delta, ITERATIONS)
 
-    frameDeltaTimeArray[lastFrameIndex] = delta
-    lastFrameIndex = (lastFrameIndex + 1) % frameDeltaTimeArray.length
-
+    let history = Reflect.get(TIME_STEP, 'deltaHistory') as number[]
     let total = 0
 
-    for (let deltaTime of frameDeltaTimeArray)
+    for (let deltaTime of history)
         total += deltaTime
 
-    fps = frameDeltaTimeArray.length / total
+    fps = history.length / total
 
     KEYBOARD.update()
     MOUSE.update()
@@ -97,6 +109,8 @@ RENDERER.on('render', (graphics) => {
 
         if (!body)
             continue
+        if (!intersectAABBs(body.getBounds(), RENDERER.camera.bounds))
+            continue
 
         switch (body.type) {
             case ShapeType.Circle:
@@ -106,7 +120,7 @@ RENDERER.on('render', (graphics) => {
                 )
                 graphics.drawCircleLine(
                     body.position.x, body.position.y, body.radius,
-                    1, 'white'
+                    1, DEFAULT_COLOURS.white
                 )
 
                 break
@@ -115,19 +129,15 @@ RENDERER.on('render', (graphics) => {
                     body.getTransformedVertices(), colours[i]
                 )
                 graphics.drawPolyLine(
-                    body.getTransformedVertices(), 1, 'white'
+                    body.getTransformedVertices(), 1, DEFAULT_COLOURS.white
                 )
         }
     }
 
-    for (let contact of WORLD.contactPoints) {
-        graphics.drawCircleLine(contact.x, contact.y, .25, 1, 'red')
-    }
-
     let { min } = RENDERER.camera.bounds
 
-    graphics.drawText(`FPS: ${Math.round(fps).toString()}`, min.x + 1, min.y + 2, 'bold 25px sans-serif', 'white')
-    graphics.drawText(`Bodies: ${WORLD.bodyCount}`, min.x + 1, min.y + 4, 'bold 25px sans-serif', 'white')
+    graphics.drawText(`FPS: ${Math.round(fps).toString()}`, min.x + 1, min.y + 2, 'bold 25px sans-serif', DEFAULT_COLOURS.white)
+    graphics.drawText(`Bodies: ${WORLD.bodyCount}`, min.x + 1, min.y + 4, 'bold 25px sans-serif', DEFAULT_COLOURS.white)
 })
 
 addEventListener('load', () => TIME_STEP.start())

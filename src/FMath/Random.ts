@@ -14,13 +14,13 @@ export class Random {
         return this.x / this.m
     }
     
-    public float(min: number = 0, max: number = 0): number {
+    public float(min: number = 0, max: number = 1): number {
         if (min > max)
             [min, max] = [max, min]
 
         return min + this.next() * (max - min)
     }
-    public int(min: number = 0, max: number = 0): number {
+    public int(min: number = 0, max: number = 1): number {
         return Math.floor(this.float(min, max))
     }
     public boolean(probability: number = 0.5): boolean {
