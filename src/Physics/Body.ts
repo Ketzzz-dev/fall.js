@@ -1,223 +1,204 @@
-import { clamp } from "@FMath/Common"
-import { Vector } from "@FMath/Vector"
-import { AABB } from "@Geometry/AABB"
-import { Transform } from "./Transform"
-import { World } from "./World"
+import { Vector } from '@Math/Vector'
 
-// THIS CODE IS ALSO VERY UGLY, PLEASE WAIT UNTIL I REFORMAT THIS
+// TODO: update comments
 
-export enum ShapeType {
-    Circle, Rectangle
+/**
+ * The configuration object passed to a body constructor.
+ */
+export interface BodyOptions {
+    /**
+     * The starting world-space position of the body.
+     */
+    position: Vector
+    /**
+     * The starting rotation, in radians, 0 radians if undefined.
+     */
+    rotation?: number
+    /**
+     * The body's density.
+     */
+    density: number
+    /**
+     * The body's mass.
+     */
+    mass: number
+    /**
+     * The body's restitution.
+     */
+    restitution: number
+    /**
+     * The body's area.
+     */
+    area: number
+    /**
+     * Whether or not the body is static, false if undefined.
+     */
+    isStatic?: boolean
 }
 
+/**
+ * A physics object that stores information about it's position, velocities, rotation, mass, and whatnot.
+ */
 export class Body {
-    public position: Vector
-    public linearVelocity: Vector
-    public rotation: number
-    public rotationalVelocity: number
+    /**
+     * A vector that stores the current world-space position of the body.
+     */
+    private _position: Vector
+    /**
+     * A number that stores the current rotation of the body, in radians.
+     */
+    private _rotation: number
 
-    public force: Vector
+    /**
+     * A vector that measures the current linear velocity of a body after the last step.
+     */
+    private _linearVelocity = Vector.ZERO
+    /**
+     * A vector that measures the current rotational velocity of a body after the last step.
+     */
+    private _rotationalVelocity = 0
+    /**
+     * A vector that stores the amount of force to apply in the next step. Is zeroed after the step.
+     */
+    private _force = Vector.ZERO
 
+    /**
+     * A number that stores the density of the body, in g/cm^3.
+     */
     public readonly density: number
+    /**
+     * A number that stores the mass of the body. Is calculated in the constructor.
+     */
     public readonly mass: number
+    /**
+     * A number that stores the inverse mass of the body (1 / mass). Is zeroed if the body is static.
+     */
     public readonly inverseMass: number
+    /**
+     * A number that stores the restitution (elasticity) of the body. Is within the range 0.0 and 1.0.  
+     */
     public readonly restitution: number
+    /**
+     * A number that stores the area of the body. Is calculated in the constructor.
+     */
     public readonly area: number
 
+    /**
+     * A flag that indicates whether the body is static within the world.
+     */
     public readonly isStatic: boolean
 
-    public readonly radius: number
-    public readonly width: number
-    public readonly height: number
+    /**
+     * The options provided when this body was instantiated.
+     */
+    public readonly options: BodyOptions
 
-    private vertices!: Vector[]
-    private transformedVertices!: Vector[]
-    private bounds!: AABB
-
-    private transformUpdateRequired: boolean
-    private boundsUpdateRequired: boolean
-
-    public readonly type: ShapeType
-
-    private static createRectangleVertices(width: number, height: number): Vector[] {
-        let left = -width * .5
-        let right = left + width
-        let top = -height * .5
-        let bottom = top + height
-
-        return [
-            new Vector(left, top),
-            new Vector(right, top),
-            new Vector(right, bottom),
-            new Vector(left, bottom)
-        ]
+    /**
+     * A vector that stores the current world-space position of the body.
+     */
+    public get position(): Vector {
+        return this._position
+    }
+    /**
+     * A number that stores the current rotation of the body, in radians.
+     */
+    public get rotation(): number {
+        return this._rotation
     }
 
-    public static createCircle(
-        radius: number, position: Vector, density: number, restitution: number,
-        isStatic: boolean
-    ): Body {
-        let area = radius * radius * Math.PI
-
-        if (area < World.MIN_BODY_SIZE)
-            throw new RangeError(`Area is too small. Min area is ${World.MIN_BODY_SIZE}`)
-        if (area > World.MAX_BODY_SIZE)
-            throw new RangeError(`Area is too large. Max area size is ${World.MAX_BODY_SIZE}`)
-
-        if (density < World.MIN_DENSITY)
-            throw new RangeError(`Density is too small. Min density is ${World.MIN_DENSITY}`)
-        if (density > World.MAX_DENSITY)
-            throw new RangeError(`Density is too large. Max density is ${World.MAX_DENSITY}`)
-
-        restitution = clamp(restitution, 0, 1)
-
-        let mass = area * density
-
-        return new Body(position, density, mass, restitution, area, isStatic, radius, 0, 0, ShapeType.Circle)
+    /**
+     * A vector that measures the current linear velocity of a body after the last step.
+     */
+    public get linearVelocity(): Vector {
+        return this._linearVelocity
     }
-    public static createRectangle(
-        width: number, height: number, position: Vector, density: number, restitution: number,
-        isStatic: boolean
-    ): Body {
-        let area = width * height
-        if (area < World.MIN_BODY_SIZE)
-            throw new RangeError(`Area is too small. Min area is ${World.MIN_BODY_SIZE}`)
-        if (area > World.MAX_BODY_SIZE)
-            throw new RangeError(`Area is too large. Max area is ${World.MAX_BODY_SIZE}`)
-
-        if (density < World.MIN_DENSITY)
-            throw new RangeError(`Density is too small. Min density is ${World.MIN_DENSITY}`)
-        if (density > World.MAX_DENSITY)
-            throw new RangeError(`Density is too large. Max density is ${World.MAX_DENSITY}`)
-
-        restitution = clamp(restitution, 0, 1)
-
-        let mass = area * density
-
-        return new Body(position, density, mass, restitution, area, isStatic, 0, width, height, ShapeType.Rectangle)
+    /**
+     * A vector that measures the current rotational velocity of a body after the last step.
+     */
+    public get rotationalVelocity(): number {
+        return this._rotationalVelocity
+    }
+    /**
+     * A vector that stores the amount of force to apply in the next step. Is zeroed after the step.
+     */
+    public get force(): Vector {
+        return this.force
     }
 
-    private constructor(
-        position: Vector, density: number, mass: number, restitution: number, area: number,
-        isStatic: boolean, radius: number, width: number, height: number, type: ShapeType
-    ) {
-        this.position = position
-        this.linearVelocity = Vector.ZERO
-        this.rotation = 0
-        this.rotationalVelocity = 0
+    /**
+     * @param options The options
+     */
+    private constructor (options: BodyOptions) {
+        this.options = options
 
-        this.force = Vector.ZERO
+        let { position, rotation, density, mass, restitution, area, isStatic } = this.options
+
+        this._position = position
+        this._rotation = rotation ?? 0
 
         this.density = density
         this.mass = mass
         this.restitution = restitution
         this.area = area
 
-        this.isStatic = isStatic
+        this.isStatic = isStatic ?? false
 
-        this.inverseMass = this.isStatic ? 0 : 1 / this.mass
-
-        this.radius = radius
-        this.width = width
-        this.height = height
-
-        this.type = type
-
-        if (this.type == ShapeType.Rectangle) {
-            this.vertices = Body.createRectangleVertices(this.width, this.height)
-            this.transformedVertices = Array(4)
-        }
-
-        this.transformUpdateRequired = true
-        this.boundsUpdateRequired = true
+        this.inverseMass = isStatic ? 0 : 1 / this.mass
     }
 
-    public getTransformedVertices(): Vector[] {
-        if (this.transformUpdateRequired) {
-            let transform = new Transform(this.position, this.rotation)
-
-            this.transformedVertices = this.vertices.map((vertex) => Vector.transform(vertex, transform))
-
-            this.transformUpdateRequired = false
-        }
-
-        return this.transformedVertices
-    }
-    public getBounds(): AABB {
-        if (this.boundsUpdateRequired) {
-            let minX = Number.MAX_VALUE
-            let minY = Number.MAX_VALUE
-            let maxX = Number.MIN_VALUE
-            let maxY = Number.MIN_VALUE
-
-            switch (this.type) {
-                case ShapeType.Circle:
-                    minX = this.position.x - this.radius
-                    minY = this.position.y - this.radius          
-                    maxX = this.position.x + this.radius
-                    maxY = this.position.y + this.radius
-
-                    break
-                case ShapeType.Rectangle:
-                    this.getTransformedVertices().forEach(vertex => {
-                        if (vertex.x < minX) minX = vertex.x
-                        if (vertex.y < minY) minY = vertex.y
-                        if (vertex.x > maxX) maxX = vertex.x
-                        if (vertex.y > maxY) maxY = vertex.y
-                    })
-
-                    break
-                default:
-                    throw new Error('unknown type')
-            }
-
-            this.bounds = new AABB(new Vector(minX, minY), new Vector(maxX, maxY))
-            
-            this.boundsUpdateRequired = false
-        }
-
-        return this.bounds
-    }
-
-    public move(v: Vector): void {
-        this.transformUpdateRequired = true
-        this.boundsUpdateRequired = true
-        this.position = Vector.add(this.position, v)
-    }
-    public moveTo(v: Vector): void {
-        this.transformUpdateRequired = true
-        this.boundsUpdateRequired = true
-        this.position = v
-    }
-    public rotate(r: number): void {
-        this.transformUpdateRequired = true
-        this.boundsUpdateRequired = true
-        this.rotation += r
-    }
-
-    public addForce(f: Vector): void {
-        this.transformUpdateRequired = true
-        this.boundsUpdateRequired = true
-        this.force = f
-    }
-
-    public step(delta: number, gravity: Vector, iterations: number): void {
+    /**
+     * Performs a simulation step and updates the body's position, rotation, and velocities.
+     * 
+     * @param delta The elapsed time in seconds since the last step.
+     */
+    public step(delta: number, gravity: Vector): void {
         if (this.isStatic)
             return
 
-        delta /= iterations
+        this._linearVelocity = Vector.add(this._linearVelocity, Vector.multiply(gravity, delta))
+        this._position = Vector.add(this.position, Vector.multiply(this._linearVelocity, delta))
+        this._rotation += this.rotationalVelocity * delta
+    }
 
-        this.transformUpdateRequired = true
-        this.boundsUpdateRequired = true
+    /**
+     * Increments this body's position by `amount`.
+     * 
+     * @param amount The amount to move.
+     */
+    public move(amount: Vector): void {
+        this._position = Vector.add(this._position, amount)
+    }
+    /**
+     * Sets this body's position to `position`.
+     * 
+     * @param position The position to move to.
+     */
+    public moveTo(position: Vector): void {
+        this._position = position
+    }
 
-        // let acceleration = Vector.div(this.force, this.mass)
-
-        // this.linearVelocity = Vector.add(this.linearVelocity, Vector.mul(acceleration, delta))
-
-        this.linearVelocity = Vector.add(this.linearVelocity, Vector.mul(gravity, delta))
-        this.position = Vector.add(this.position, Vector.mul(this.linearVelocity, delta))
-        this.rotation += this.rotationalVelocity * delta
-
-        this.force = Vector.ZERO
+    /**
+     * Increments this body's rotation by `amount`, in radians.
+     * 
+     * @param amount The amount to rotate, in radians.
+     */
+    public rotate(amount: number): void {
+        this._rotation += amount
+    }
+    /**
+     * Sets this body's rotation to `rotation`, in radians.
+     * 
+     * @param rotation The rotation to rotate to, in radians.
+     */
+    public rotateTo(rotation: number): void {
+        this._rotation = rotation
+    }
+    /**
+     * Applies a force to this body.
+     * 
+     * @param force The amount of force to apply.
+     */
+    public applyForce(force: Vector): void {
+        this._force = Vector.add(this._force, force)
     }
 }

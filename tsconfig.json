@@ -8,7 +8,7 @@
         "paths": {
             "@Core/*": ["./src/Core/*"],
             "@Display/*": ["src/Display/*"],
-            "@FMath/*": ["./src/FMath/*"],
+            "@Math/*": ["./src/Math/*"],
             "@Physics/*": ["./src/Physics/*"],
             "@Geometry/*": ["./src/Geometry/*"],
             "@Input/*": ["./src/Input/*"],

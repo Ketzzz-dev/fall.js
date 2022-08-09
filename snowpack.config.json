@@ -14,7 +14,7 @@
     "alias": {
         "@Core": "./src/Core",
         "@Physics": "./src/Physics",
-        "@FMath": "./src/FMath",
+        "@Math": "./src/Math",
         "@Display": "./src/Display",
         "@Geometry": "./src/Geometry",
         "@Input": "./src/Input"
