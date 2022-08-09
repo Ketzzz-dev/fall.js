@@ -56,10 +56,10 @@ export namespace Common {
      * @param b The destination Vector.
      */
     export function distance(a: Vector, b: Vector): number {
-        let dX = a.x - b.x
-        let dY = a.y - b.y
+        let deltaX = a.x - b.x
+        let deltaY = a.y - b.y
     
-        return Math.sqrt(dX * dX + dY * dY)
+        return Math.sqrt(deltaX * deltaX + deltaY * deltaY)
     }
     /**
      * Returns the normalized form of a vector.
@@ -95,8 +95,8 @@ export namespace Common {
      * Returns the clamped value within the range of `min` and `max`.
      * 
      * @param x The value to clamp.
-     * @param min The minimum range.
-     * @param max The maximum range.
+     * @param min The minimum range, 0 if undefined.
+     * @param max The maximum range, 1 if undefined.
      */
     export function clamp(x: number, min = 0, max = 1): number {
         if (min == max)
@@ -106,7 +106,13 @@ export namespace Common {
 
         return x < min ? min : x > max ? max : x
     }
-    
+    /**
+     * Returns a boolean value that determines whether `x` is within the range of `min` and `max`.
+     * 
+     * @param x The value to test.
+     * @param min The minimum range, 0 if undefined.
+     * @param max The maximum range, 1 if undefined.
+     */
     export function within(x: number, min = 0, max = 1): boolean {
         if (min == max)
             return x == min

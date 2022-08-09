@@ -17,6 +17,7 @@
         "@Math": "./src/Math",
         "@Display": "./src/Display",
         "@Geometry": "./src/Geometry",
-        "@Input": "./src/Input"
+        "@Input": "./src/Input",
+        "@Util": "./src/Util"
     }
 }
