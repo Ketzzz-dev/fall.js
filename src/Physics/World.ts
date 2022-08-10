@@ -1,12 +1,11 @@
 import { Common } from '@Math/Common'
 import { Vector } from '@Math/Vector'
 import { Body } from './Body'
-import { CircleCollider } from './Collisions/Colliders'
 import { CollisionManifold } from './Collisions/CollisionManifold'
 
 export class World {
     private _bodies = Array<Body>()
-    private _gravity = new Vector(0, 9.81)
+    private _gravity = new Vector(0, 0)
     
     public addBody(body: Body): void {
         this._bodies.push(body)
@@ -26,7 +25,7 @@ export class World {
             for (let b of this._bodies) {
                 if (a == b) break
 
-                let points = a.collider.testCircleCollision(a.transform, b.collider as CircleCollider, b.transform)
+                let points = a.collider.testCollision(a.transform, b.collider, b.transform)
 
                 if (points)
                     collisions.push(new CollisionManifold(a, b, points))

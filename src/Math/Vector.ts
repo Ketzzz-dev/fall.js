@@ -90,6 +90,17 @@ export class Vector {
     public get negative(): Vector {
         return new Vector(-this.x, -this.y)
     }
+    public get magnitudeSq(): number {
+        return this.x * this.x + this.y * this.y
+    }
+    public get magnitude(): number {
+        return Math.sqrt(this.x * this.x + this.y * this.y)
+    }
+    public get normalized(): Vector {
+        let { magnitude } = this
+
+        return new Vector(this.x / magnitude, this.y / magnitude)
+    }
     
     /**
      * @param x The x component.

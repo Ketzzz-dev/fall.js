@@ -9,32 +9,18 @@ export namespace Common {
      * Returns the magnitude of a vector, squared.
      * 
      * @param v The vector to calculate.
+     * @deprecated Use {@link Vector#magnitudeSq} instead
      */
-    export function magnitudeSqrd(v: Vector): number {
-        return v.x * v.x + v.y * v.y
-    }
-    /**
-     * An alias for {@link Common#magnitudeSqrd}.
-     * 
-     * @param v The vector to calculate.
-     */
-     export function lengthSqrd(v: Vector): number {
+    export function magnitudeSq(v: Vector): number {
         return v.x * v.x + v.y * v.y
     }
     /**
      * Returns the magnitude of a vector.
      * 
      * @param v The vector to calculate.
+     * @deprecated Use {@link Vector#magnitude} instead
      */
     export function magnitude(v: Vector): number {
-        return Math.sqrt(v.x * v.x + v.y * v.y)
-    }
-    /**
-     * An alias for {@link Common#magnitude}.
-     * 
-     * @param v The vector to calculate.
-     */
-     export function length(v: Vector): number {
         return Math.sqrt(v.x * v.x + v.y * v.y)
     }
     /**
@@ -65,6 +51,7 @@ export namespace Common {
      * Returns the normalized form of a vector.
      * 
      * @param v The vector to calculate.
+     * @deprecated Use {@link Vector#normalized} instead
      */
     export function normalize(v: Vector): Vector {
         let length = magnitude(v)
@@ -88,6 +75,15 @@ export namespace Common {
      */
     export function cross(a: Vector, b: Vector): number {
         return a.x * b.y - a.y * b.x
+    }
+    export function rotate(v: Vector, x: number): Vector {
+        let sin = Math.sin(x)
+        let cos = Math.cos(x)
+
+        return new Vector(
+            cos * v.x - sin * v.y,
+            sin * v.x + cos * v.y
+        )
     }
 
     // numerical math

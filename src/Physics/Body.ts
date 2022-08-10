@@ -1,6 +1,6 @@
 import { Common } from '@Math/Common'
 import { Vector } from '@Math/Vector'
-import { BaseCollider, CircleCollider } from './Collisions/Colliders'
+import { BaseCollider, CircleCollider, PolygonCollider } from './Collisions/Colliders'
 import { Transform } from './Transform'
 
 export interface BodyOptions {
@@ -17,6 +17,14 @@ export interface BaseShapeOptions {
     restitution: number
 }
 export interface CircleOptions extends BaseShapeOptions {
+    radius: number
+}
+export interface RectangleOptions extends BaseShapeOptions {
+    width: number
+    height: number
+}
+export interface PolygonOptions extends BaseShapeOptions {
+    sides: number
     radius: number
 }
 
@@ -47,8 +55,30 @@ export class Body {
             collider: new CircleCollider(radius)
         })
     }
+    public static rectangle(options: RectangleOptions): Body {
+        let { width, height, density, position, restitution } = options
+        
+        let area = width * height
 
-    private constructor (options: BodyOptions) {
+        let left = .5 * -width
+        let right = left + width
+        let top = .5 * -height
+        let bottom = top + height
+
+        let vertices = [
+            new Vector(left, top),
+            new Vector(right, top),
+            new Vector(right, bottom),
+            new Vector(left, bottom)
+        ]
+
+        return new Body({
+            position, density, area, restitution,
+            collider: new PolygonCollider(vertices)
+        })
+    }
+
+    public constructor (options: BodyOptions) {
         let { position, density, area, restitution, collider } = options
 
         this.transform = new Transform(position)
