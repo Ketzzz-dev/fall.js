@@ -1,6 +1,6 @@
 import { MathF } from '../utility/MathF'
 import { Vector } from './Vector'
-import { BaseCollider, CircleCollider, PolygonCollider } from './collisions/Colliders'
+import { Colliders } from './collisions/Colliders'
 import { Transform } from './Transform'
 
 export interface BodyOptions {
@@ -8,24 +8,8 @@ export interface BodyOptions {
     density: number
     area: number
     restitution: number
-    collider: BaseCollider
-}
-
-export interface BaseShapeOptions {
-    position: Vector
-    density: number
-    restitution: number
-}
-export interface CircleOptions extends BaseShapeOptions {
-    radius: number
-}
-export interface RectangleOptions extends BaseShapeOptions {
-    width: number
-    height: number
-}
-export interface PolygonOptions extends BaseShapeOptions {
-    sides: number
-    radius: number
+    isStatic?: boolean
+    collider: Colliders.BaseCollider
 }
 
 export class Body {
@@ -43,74 +27,22 @@ export class Body {
     public readonly mass: number
     public readonly inverseMass: number
 
-    public readonly collider: BaseCollider
+    public readonly isStatic: boolean
 
-    public static circle(options: CircleOptions): Body {
-        let { radius, density, position, restitution } = options
-
-        let area = radius * radius * Math.PI
-
-        return new Body({
-            position, density, area, restitution,
-            collider: new CircleCollider(radius)
-        })
-    }
-    public static rectangle(options: RectangleOptions): Body {
-        let { width, height, density, position, restitution } = options
-        
-        let area = width * height
-
-        let left = .5 * -width
-        let right = left + width
-        let top = .5 * -height
-        let bottom = top + height
-
-        let vertices = [
-            new Vector(left, top),
-            new Vector(right, top),
-            new Vector(right, bottom),
-            new Vector(left, bottom)
-        ]
-
-        return new Body({
-            position, density, area, restitution,
-            collider: new PolygonCollider(vertices)
-        })
-    }
-    public static polygon(options: PolygonOptions): Body {
-        let { sides, radius, position, density, restitution } = options
-
-        let theta = MathF.TWO_PI / sides
-
-        let vertices = Array<Vector>()
-
-        for (let i = 0; i < sides; i++) {
-            let angle = i * theta
-
-            vertices.push(new Vector(
-                Math.cos(angle) * radius,
-                Math.sin(angle) * radius
-            ))
-        }
-
-        let area = 2 / (radius * radius * sides * Math.sin(Math.PI * 2 / sides))
-
-        return new Body({
-            position, density, area, restitution,
-            collider: new PolygonCollider(vertices)
-        })
-    }
+    public readonly collider: Colliders.BaseCollider
 
     public constructor (options: BodyOptions) {
-        let { position, density, area, restitution, collider } = options
+        let { position, density, area, isStatic, restitution, collider } = options
 
         this.transform = new Transform(position)
 
         this.density = density
         this.area = area
 
+        this.isStatic = isStatic ?? false
+
         this.mass = area * density
-        this.inverseMass = 1 / this.mass
+        this.inverseMass = this.isStatic ? 0 : 1 / this.mass
 
         this.restitution = MathF.clamp(restitution)
 
@@ -118,6 +50,9 @@ export class Body {
     }
 
     public step(delta: number, gravity: Vector) {
+        if (this.isStatic)
+            return
+
         this.force = Vector.add(this.force, Vector.multiply(this.mass, gravity))
 
         let acceleration = Vector.divide(this.force, this.mass)

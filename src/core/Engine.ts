@@ -17,7 +17,7 @@ export class Engine extends EventEmitter<EngineEvents> {
     private frameRequestId = 0
 
     public delta = 0
-    public deltaHistory = Array<number>()
+    public deltaHistory = Array<number>(Engine.MAX_DELTA_HISTORY_LENGTH).fill(Engine.MAX_DELTA)
 
     public isRunning = false
 

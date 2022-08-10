@@ -42,4 +42,10 @@ export namespace Random {
 
         return Math.random() <= probability
     }
+
+    export function fromArray<T>(array: T[]): T {
+        let index = integer(0, array.length)
+
+        return array[index]
+    }
 }

@@ -5,7 +5,7 @@ import { CollisionManifold } from './collisions/CollisionManifold'
 
 export class World {
     private _bodies = Array<Body>()
-    private _gravity = new Vector(0, 0)
+    private _gravity = new Vector(0, 9.81)
     
     public addBody(body: Body): void {
         this._bodies.push(body)
@@ -24,6 +24,7 @@ export class World {
         for (let a of this._bodies) {
             for (let b of this._bodies) {
                 if (a == b) break
+                if (a.isStatic && b.isStatic) continue 
 
                 let points = a.collider.testCollision(a.transform, b.collider, b.transform)
 
@@ -41,8 +42,8 @@ export class World {
         let totalMass = a.inverseMass + b.inverseMass
         let separationAmount = Vector.multiply(points.normal, points.depth)
 
-        a.transform.position = Vector.subtract(a.transform.position, Vector.multiply(separationAmount, a.inverseMass / totalMass))
-        b.transform.position = Vector.add(b.transform.position, Vector.multiply(separationAmount, b.inverseMass / totalMass))
+        if (!a.isStatic) a.transform.position = Vector.subtract(a.transform.position, Vector.multiply(separationAmount, a.inverseMass / totalMass))
+        if (!b.isStatic) b.transform.position = Vector.add(b.transform.position, Vector.multiply(separationAmount, b.inverseMass / totalMass))
 
         let contactVelocity = Vector.subtract(b.linearVelocity, a.linearVelocity)
         let impulseForce = MathF.dot(contactVelocity, points.normal)
@@ -55,7 +56,7 @@ export class World {
 
         let fullImpulse = Vector.multiply(points.normal, impulseMagnitude)
 
-        a.linearVelocity = Vector.subtract(a.linearVelocity, Vector.multiply(fullImpulse, a.inverseMass))
-        b.linearVelocity = Vector.add(b.linearVelocity, Vector.multiply(fullImpulse, b.inverseMass))
+        if (!a.isStatic) a.linearVelocity = Vector.subtract(a.linearVelocity, Vector.multiply(fullImpulse, a.inverseMass))
+        if (!b.isStatic) b.linearVelocity = Vector.add(b.linearVelocity, Vector.multiply(fullImpulse, b.inverseMass))
     }
 }

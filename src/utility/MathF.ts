@@ -9,24 +9,6 @@ export namespace MathF {
 
     // vector math
     /**
-     * Returns the magnitude of a vector, squared.
-     * 
-     * @param v The vector to calculate.
-     * @deprecated Use {@link Vector#magnitudeSq} instead
-     */
-    export function magnitudeSq(v: Vector): number {
-        return v.x * v.x + v.y * v.y
-    }
-    /**
-     * Returns the magnitude of a vector.
-     * 
-     * @param v The vector to calculate.
-     * @deprecated Use {@link Vector#magnitude} instead
-     */
-    export function magnitude(v: Vector): number {
-        return Math.sqrt(v.x * v.x + v.y * v.y)
-    }
-    /**
      * Returns the distance between 2 vectors, sqaured.
      * 
      * @param a The source vector. 
@@ -57,7 +39,7 @@ export namespace MathF {
      * @deprecated Use {@link Vector#normalized} instead
      */
     export function normalize(v: Vector): Vector {
-        let length = magnitude(v)
+        let length = v.magnitude
 
         return new Vector(v.x / length, v.y / length)
     }
@@ -103,7 +85,7 @@ export namespace MathF {
         if (min > max)
             throw new RangeError('`min` is greater than `max`.')
 
-        return x < min ? min : x > max ? max : x
+        return x <= min ? min : x >= max ? max : x
     }
     /**
      * Returns a boolean value that determines whether `x` is within the range of `min` and `max`.
@@ -118,6 +100,6 @@ export namespace MathF {
         if (min > max)
             throw new RangeError('`min` is greater than `max`.')
 
-        return x > min && x < max
+        return x >= min && x <= max
     }
 }
