@@ -1,5 +1,5 @@
-import { Common } from '@Math/Common'
 import EventEmitter from 'eventemitter3'
+import { MathF } from '../utility/MathF'
 
 export interface EngineEvents {
     'tick': [delta: number]
@@ -50,7 +50,7 @@ export class Engine extends EventEmitter<EngineEvents> {
         this.deltaHistory = this.deltaHistory.slice(-Engine.MAX_DELTA_HISTORY_LENGTH)
         delta = Math.min(...this.deltaHistory)
 
-        delta = Common.clamp(delta, Engine.MIN_DELTA, Engine.MAX_DELTA)
+        delta = MathF.clamp(delta, Engine.MIN_DELTA, Engine.MAX_DELTA)
 
         this.delta = delta
 

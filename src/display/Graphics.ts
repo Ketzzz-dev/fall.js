@@ -1,5 +1,5 @@
-import { Renderer } from '@Core/Renderer'
-import { Vector } from '@Math/Vector'
+import { Renderer } from '../core/Renderer'
+import { Vector } from '../physics/Vector'
 import assert from 'assert'
 
 export class Graphics {

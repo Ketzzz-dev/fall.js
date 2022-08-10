@@ -1,9 +1,12 @@
-import { Vector } from './Vector'
+import { Vector } from '../physics/Vector'
 
 /**
  * The namespace that provides constants and methods to perform mathematical computing.
  */
-export namespace Common {
+export namespace MathF {
+    export const PI_OVER_TWO = Math.PI / 2
+    export const TWO_PI = 2 * Math.PI
+
     // vector math
     /**
      * Returns the magnitude of a vector, squared.

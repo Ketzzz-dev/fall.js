@@ -1,6 +1,6 @@
-import { Vector } from '@Math/Vector'
-import { Body } from '@Physics/Body'
-import { Pair } from '@Util/Pair'
+import { Vector } from '../Vector'
+import { Body } from '../Body'
+import { Pair } from '../../utility/Pair'
 
 export interface CollisionPoints {
     a: Vector

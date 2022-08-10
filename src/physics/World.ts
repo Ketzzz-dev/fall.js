@@ -1,7 +1,7 @@
-import { Common } from '@Math/Common'
-import { Vector } from '@Math/Vector'
+import { MathF } from '../utility/MathF'
+import { Vector } from './Vector'
 import { Body } from './Body'
-import { CollisionManifold } from './Collisions/CollisionManifold'
+import { CollisionManifold } from './collisions/CollisionManifold'
 
 export class World {
     private _bodies = Array<Body>()
@@ -45,7 +45,7 @@ export class World {
         b.transform.position = Vector.add(b.transform.position, Vector.multiply(separationAmount, b.inverseMass / totalMass))
 
         let contactVelocity = Vector.subtract(b.linearVelocity, a.linearVelocity)
-        let impulseForce = Common.dot(contactVelocity, points.normal)
+        let impulseForce = MathF.dot(contactVelocity, points.normal)
 
         if (impulseForce > 0)
             return

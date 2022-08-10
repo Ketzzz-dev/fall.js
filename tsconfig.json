@@ -4,16 +4,6 @@
         "target": "esnext",
         "moduleResolution": "node",
         "outDir": "./dist",
-        "baseUrl": "./",
-        "paths": {
-            "@Core/*": ["./src/Core/*"],
-            "@Display/*": ["src/Display/*"],
-            "@Math/*": ["./src/Math/*"],
-            "@Physics/*": ["./src/Physics/*"],
-            "@Geometry/*": ["./src/Geometry/*"],
-            "@Input/*": ["./src/Input/*"],
-            "@Util/*": ["./src/Util/*"]
-        },
         "isolatedModules": true,
         "declaration": true,
         "noEmit": true,

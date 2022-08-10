@@ -10,14 +10,5 @@
         "bundle": true,
         "minify": true,
         "sourcemap": true
-    },
-    "alias": {
-        "@Core": "./src/Core",
-        "@Physics": "./src/Physics",
-        "@Math": "./src/Math",
-        "@Display": "./src/Display",
-        "@Geometry": "./src/Geometry",
-        "@Input": "./src/Input",
-        "@Util": "./src/Util"
     }
 }

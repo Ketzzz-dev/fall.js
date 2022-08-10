@@ -1,4 +1,4 @@
-import { Vector } from '@Math/Vector'
+import { Vector } from './Vector'
 
 export class Transform {
     public position: Vector

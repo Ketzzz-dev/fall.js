@@ -1,6 +1,6 @@
-import { Common } from '@Math/Common'
-import { Vector } from '@Math/Vector'
-import { BaseCollider, CircleCollider, PolygonCollider } from './Collisions/Colliders'
+import { MathF } from '../utility/MathF'
+import { Vector } from './Vector'
+import { BaseCollider, CircleCollider, PolygonCollider } from './collisions/Colliders'
 import { Transform } from './Transform'
 
 export interface BodyOptions {
@@ -77,6 +77,29 @@ export class Body {
             collider: new PolygonCollider(vertices)
         })
     }
+    public static polygon(options: PolygonOptions): Body {
+        let { sides, radius, position, density, restitution } = options
+
+        let theta = MathF.TWO_PI / sides
+
+        let vertices = Array<Vector>()
+
+        for (let i = 0; i < sides; i++) {
+            let angle = i * theta
+
+            vertices.push(new Vector(
+                Math.cos(angle) * radius,
+                Math.sin(angle) * radius
+            ))
+        }
+
+        let area = 2 / (radius * radius * sides * Math.sin(Math.PI * 2 / sides))
+
+        return new Body({
+            position, density, area, restitution,
+            collider: new PolygonCollider(vertices)
+        })
+    }
 
     public constructor (options: BodyOptions) {
         let { position, density, area, restitution, collider } = options
@@ -89,7 +112,7 @@ export class Body {
         this.mass = area * density
         this.inverseMass = 1 / this.mass
 
-        this.restitution = Common.clamp(restitution)
+        this.restitution = MathF.clamp(restitution)
 
         this.collider = collider
     }

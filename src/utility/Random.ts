@@ -1,4 +1,4 @@
-import { Common } from './Common'
+import { MathF } from './MathF'
 
 /**
  * The namespace that provides simplified methods for generating psuedo-random numbers.
@@ -38,7 +38,7 @@ export namespace Random {
      * @param probability The probability in percentage.
      */
     export function boolean(probability = 0.5): boolean {
-        probability = Common.clamp(probability)
+        probability = MathF.clamp(probability)
 
         return Math.random() <= probability
     }
