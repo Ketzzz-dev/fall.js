@@ -1,9 +1,9 @@
 /**
- * A struct for storing a point in a 2-dimensional space.
+ * A struct that stores a point in a 2-dimensional space.
  */
 export class Vector {
     /**
-     * A constant that stores 0 for `x` and `y`.
+     * A static constant that stores 0 for `x` and `y`.
      */
     public static readonly ZERO = new Vector(0, 0)
 
@@ -90,12 +90,21 @@ export class Vector {
     public get negative(): Vector {
         return new Vector(-this.x, -this.y)
     }
+    /**
+     * A number that stores the magnitude (length) of the vector, squared.
+     */
     public get magnitudeSq(): number {
         return this.x * this.x + this.y * this.y
     }
+    /**
+     * A number that stores the magnitude (length) of the vector.
+     */
     public get magnitude(): number {
         return Math.sqrt(this.x * this.x + this.y * this.y)
     }
+    /**
+     * A vector that stores the normalized form of the vector.
+     */
     public get normalized(): Vector {
         let { magnitude } = this
 

@@ -3,26 +3,73 @@ import { Body } from './Body'
 import { Colliders } from './collisions/Colliders'
 import { Vector } from './Vector'
 
-export interface BaseShapeOptions {
-    position: Vector
-    density: number
-    restitution: number
-    isStatic?: boolean
-}
-export interface CircleOptions extends BaseShapeOptions {
-    radius: number
-}
-export interface RectangleOptions extends BaseShapeOptions {
-    width: number
-    height: number
-}
-export interface PolygonOptions extends BaseShapeOptions {
-    sides: number
-    radius: number
-}
-
+/**
+ * A collection of methods for instantiating physics bodies with a defined geometrical shape.
+ */
 export namespace Shapes {
-    export function circle(options: CircleOptions): Body {
+    /**
+     * The base shape configuration object that is used for instantiating a body with default properties.
+     */
+    export interface BaseShapeOptions {
+        /**
+         * The position of the body.
+         */
+        position: Vector
+        /**
+         * The density of the body, in g/cm^2.
+         */
+        density: number
+        /**
+         * The restitution (elasticity) of the body, is clamped between 0 and 1.
+         */
+        restitution: number
+        /**
+         * Should the body be static or not?
+         */
+        isStatic?: boolean
+    }
+    /**
+     * The circle shape configuration object.
+     */
+    export interface CircleOptions extends BaseShapeOptions {
+        /**
+         * The radius of the body.
+         */
+        radius: number
+    }
+    /**
+     * The rectangle shape configuration object.
+     */
+    export interface RectangleOptions extends BaseShapeOptions {
+        /**
+         * The width of the body.
+         */
+        width: number
+        /**
+         * The height of the body.
+         */
+        height: number
+    }
+    /**
+     * The regular polygon shape configuration object.
+     */
+    export interface PolygonOptions extends BaseShapeOptions {
+        /**
+         * The amount of sides of the body, must be >3.
+         */
+        sides: number
+        /**
+         * The radius of the body.
+         */
+        radius: number
+    }
+
+    /**
+     * Returns a body instantiated with a circle collider.
+     * 
+     * @param options The configuration object.
+     */
+    export function circle(options: Shapes.CircleOptions): Body {
         let { radius, density, position, isStatic, restitution } = options
 
         let area = radius * radius * Math.PI
@@ -32,7 +79,12 @@ export namespace Shapes {
             collider: new Colliders.CircleCollider(radius)
         })
     }
-    export function rectangle(options: RectangleOptions): Body {
+    /**
+     * Returns a body instantiated with a polygon collider.
+     * 
+     * @param options The configuration object.
+     */
+    export function rectangle(options: Shapes.RectangleOptions): Body {
         let { width, height, density, position, isStatic, restitution } = options
         
         let left = .5 * -width
@@ -54,7 +106,12 @@ export namespace Shapes {
             collider: new Colliders.PolygonCollider(vertices)
         })
     }
-    export function polygon(options: PolygonOptions): Body {
+    /**
+     * Returns a body instantiated with a polygon collider.
+     * 
+     * @param options The configuration object.
+     */
+    export function polygon(options: Shapes.PolygonOptions): Body {
         let { sides, radius, position, density, isStatic, restitution } = options
 
         let theta = MathF.TWO_PI / sides

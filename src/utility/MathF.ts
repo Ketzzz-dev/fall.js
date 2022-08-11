@@ -1,11 +1,17 @@
 import { Vector } from '../physics/Vector'
 
 /**
- * The namespace that provides constants and methods to perform mathematical computing.
+ * A collection of constants and methods to perform mathematical computing.
  */
 export namespace MathF {
-    export const PI_OVER_TWO = Math.PI / 2
-    export const TWO_PI = 2 * Math.PI
+    /**
+     * A constant for PI / 2.
+     */
+    export const PI_OVER_TWO = 1.5707963267948966
+    /**
+     * A constant for 2(PI).
+     */
+    export const TWO_PI = 6.283185307179586
 
     // vector math
     /**
@@ -33,17 +39,6 @@ export namespace MathF {
         return Math.sqrt(deltaX * deltaX + deltaY * deltaY)
     }
     /**
-     * Returns the normalized form of a vector.
-     * 
-     * @param v The vector to calculate.
-     * @deprecated Use {@link Vector#normalized} instead
-     */
-    export function normalize(v: Vector): Vector {
-        let length = v.magnitude
-
-        return new Vector(v.x / length, v.y / length)
-    }
-    /**
      * Returns the dot product of 2 vectors.
      * 
      * @param a Left hand side vector.
@@ -61,6 +56,12 @@ export namespace MathF {
     export function cross(a: Vector, b: Vector): number {
         return a.x * b.y - a.y * b.x
     }
+    /**
+     * Returns a vector, rotated by `angle` degrees.
+     * 
+     * @param v The vector to rotate.
+     * @param x The angle, in radians.
+     */
     export function rotate(v: Vector, x: number): Vector {
         let sin = Math.sin(x)
         let cos = Math.cos(x)

@@ -1,7 +1,7 @@
 import { MathF } from './MathF'
 
 /**
- * The namespace that provides simplified methods for generating psuedo-random numbers.
+ * A collection of simplified functions for generating psuedo-random data.
  */
 export namespace Random {
     /**
@@ -35,7 +35,7 @@ export namespace Random {
     /**
      * Returns a random boolean value determined by the `probability`.
      * 
-     * @param probability The probability in percentage.
+     * @param probability The probability in fraction.
      */
     export function boolean(probability = 0.5): boolean {
         probability = MathF.clamp(probability)
@@ -43,8 +43,13 @@ export namespace Random {
         return Math.random() <= probability
     }
 
+    /**
+     * Returns a random element from `array`.
+     * 
+     * @param array The array to grab a random element from.
+     */
     export function fromArray<T>(array: T[]): T {
-        let index = integer(0, array.length)
+        let index = Random.integer(0, array.length)
 
         return array[index]
     }

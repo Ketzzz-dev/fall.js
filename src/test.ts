@@ -1,6 +1,4 @@
-import { Body, Engine, Colliders, Random, Renderer, Vector, World, MathF } from '.'
-import { AABB } from './geometry/AABB'
-import { Shapes } from './physics/Shapes'
+import { Body, Engine, Colliders, Random, Renderer, Vector, World, MathF, Shapes, AABB } from '.'
 
 const ENGINE = new Engine
 const RENDERER = new Renderer(innerWidth, innerHeight)
@@ -57,7 +55,7 @@ for (let i = 0; i < 30; i++) {
     } else {
         let width = Random.float(2, 6)
         let height = Random.float(2, 6)
-        
+
         body = Shapes.rectangle({
             position: new Vector(x, y), 
             width, height, density: 1.5, restitution: 1 / 6
@@ -78,9 +76,7 @@ ENGINE.on('tick', (delta) => {
     for (let i = 0; i < iterations; i++)
         WORLD.step(delta / iterations)
 
-    let total = ENGINE.deltaHistory.reduce((t, dt) => t + dt)
-
-    fps = ENGINE.deltaHistory.length / total
+    fps = ENGINE.deltaHistory.length / ENGINE.deltaHistory.reduce((t, dt) => t + dt)
 
     RENDERER.update()
 })
