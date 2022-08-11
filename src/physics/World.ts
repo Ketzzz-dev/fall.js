@@ -45,18 +45,18 @@ export class World {
         if (!a.isStatic) a.transform.position = Vector.subtract(a.transform.position, Vector.multiply(separationAmount, a.inverseMass / totalMass))
         if (!b.isStatic) b.transform.position = Vector.add(b.transform.position, Vector.multiply(separationAmount, b.inverseMass / totalMass))
 
-        let contactVelocity = Vector.subtract(b.linearVelocity, a.linearVelocity)
-        let impulseForce = MathF.dot(contactVelocity, points.normal)
+        // let contactVelocity = Vector.subtract(b.linearVelocity, a.linearVelocity)
+        // let impulseForce = MathF.dot(contactVelocity, points.normal)
 
-        if (impulseForce > 0)
-            return
+        // if (impulseForce > 0)
+        //     return
 
-        let restitution = Math.max(a.restitution, b.restitution)
-        let impulseMagnitude = (-(1 + restitution) * impulseForce) / totalMass
+        // let restitution = Math.max(a.restitution, b.restitution)
+        // let impulseMagnitude = (-(1 + restitution) * impulseForce) / totalMass
 
-        let fullImpulse = Vector.multiply(points.normal, impulseMagnitude)
+        // let fullImpulse = Vector.multiply(points.normal, impulseMagnitude)
 
-        if (!a.isStatic) a.linearVelocity = Vector.subtract(a.linearVelocity, Vector.multiply(fullImpulse, a.inverseMass))
-        if (!b.isStatic) b.linearVelocity = Vector.add(b.linearVelocity, Vector.multiply(fullImpulse, b.inverseMass))
+        // if (!a.isStatic) a.linearVelocity = Vector.subtract(a.linearVelocity, Vector.multiply(fullImpulse, a.inverseMass))
+        // if (!b.isStatic) b.linearVelocity = Vector.add(b.linearVelocity, Vector.multiply(fullImpulse, b.inverseMass))
     }
 }

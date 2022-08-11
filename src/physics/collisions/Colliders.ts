@@ -3,7 +3,7 @@ import { MathF } from '../../utility/MathF'
 import { Transform } from '../Transform'
 import { Vector } from '../Vector'
 import { CollisionPoints } from './CollisionManifold'
-import { Algorithms } from './Algorithms'
+import { Collisions } from './Collisions'
 
 /**
  * The namespace of different shape colliders.
@@ -21,16 +21,12 @@ export namespace Colliders {
          * @param otherTransform The transform to test collision with.
          */
         public testCollision(thisTransform: Transform, otherCollider: BaseCollider, otherTransform: Transform): CollisionPoints | undefined | null {
-            if (!AABB.overlaps(this.getBounds(thisTransform), otherCollider.getBounds(otherTransform)))
-                return
+            if (!AABB.overlaps(this.getBounds(thisTransform), otherCollider.getBounds(otherTransform))) return
 
-            // return Algorithms.gjk(this, thisTransform, otherCollider, otherTransform)
-
-            if (otherCollider instanceof CircleCollider) {
-                return this.testCircleCollision(thisTransform, otherCollider, otherTransform)
-            } else if (otherCollider instanceof PolygonCollider) {
-                return this.testPolygonCollision(thisTransform, otherCollider, otherTransform)
-            } else return otherCollider.testCollision(otherTransform, this, thisTransform)
+            if (otherCollider instanceof CircleCollider) return this.testCircleCollision(thisTransform, otherCollider, otherTransform)
+            else if (otherCollider instanceof PolygonCollider) return this.testPolygonCollision(thisTransform, otherCollider, otherTransform)
+            
+            return
         }
 
         /**
@@ -86,10 +82,10 @@ export namespace Colliders {
         }
         
         public testCircleCollision(thisTransform: Transform, otherCollider: CircleCollider, otherTransform: Transform): CollisionPoints | undefined | null {
-            return Algorithms.findCircleCollisionPoints(this, thisTransform, otherCollider, otherTransform)
+            return Collisions.findCircleCollisionPoints(this, thisTransform, otherCollider, otherTransform)
         }
         public testPolygonCollision(thisTransform: Transform, otherCollider: PolygonCollider, otherTransform: Transform): CollisionPoints | undefined | null {
-            return Algorithms.findCirclePolygonCollisionPoints(this, thisTransform, otherCollider, otherTransform)
+            return Collisions.findCirclePolygonCollisionPoints(this, thisTransform, otherCollider, otherTransform)
         }
     }
     /**
@@ -151,7 +147,7 @@ export namespace Colliders {
         }
     
         public testCircleCollision(thisTransform: Transform, otherCollider: CircleCollider, otherTransform: Transform): CollisionPoints | undefined | null {
-            let points = Algorithms.findCirclePolygonCollisionPoints(otherCollider, otherTransform, this, thisTransform)
+            let points = Collisions.findCirclePolygonCollisionPoints(otherCollider, otherTransform, this, thisTransform)
     
             if (points)
                 points.normal = points.normal.negative
@@ -159,7 +155,7 @@ export namespace Colliders {
             return points
         }
         public testPolygonCollision(thisTransform: Transform, otherCollider: PolygonCollider, otherTransform: Transform): CollisionPoints | undefined | null {
-            return Algorithms.findPolygonCollisionPoints(this, thisTransform, otherCollider, otherTransform)
+            return Collisions.findPolygonCollisionPoints(this, thisTransform, otherCollider, otherTransform)
         }
     }
 }

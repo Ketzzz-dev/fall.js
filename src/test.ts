@@ -24,54 +24,60 @@ let padding = Vector.multiply(.1, Vector.subtract(max, min))
 
 let ground = Shapes.rectangle({
     position: new Vector(0, max.y - padding.y),
-    width: (max.x - min.x) - padding.x, height: 3,
+    width: (max.x - min.x) - padding.x, height: 1,
     density: 2.65, restitution: 0.3, isStatic: true
 })
 
 WORLD.addBody(ground)
 colors.push(DefaultColors.Green)
 
-for (let i = 0; i < 30; i++) {
-    let x = Random.float(min.x + padding.x, max.x - padding.x)
-    let y = Random.float(min.y + padding.y, 0)
+// for (let i = 0; i < 50; i++) {
+//     let x = Random.float(min.x + padding.x * 2, max.x - padding.x * 2)
+//     let y = Random.float(min.y + padding.y, 0)
+//     let radius = Random.float(0.5, 1)
+//     let sides = Random.integer(2, 5) * 2 - 1
 
-    let body: Body
-    
-    if (Random.boolean()) {
-        let radius = Random.float(1, 3)
+//     let body: Body | undefined | null
 
-        body = Shapes.circle({
-            position: new Vector(x, y), 
-            radius, density: 1.5, restitution: 1 / 6
-        })
-    } else if (Random.boolean()) {
-        let radius = Random.float(2, 3)
-        let sides = Random.integer(2, 5) * 2
+//     if (Random.boolean(1)) {
+//         body = Shapes.polygon({
+//             position: new Vector(x, y), 
+//             radius, sides, density: 1.5, restitution: 1 / 6
+//         })
+//     } else {
+//         body = Shapes.circle({
+//             position: new Vector(x, y), 
+//             radius, density: 1.5, restitution: 1 / 6
+//         })
+//     }
+//     if (body) {
+//         // body.transform.rotation = Random.float(0, MathF.TWO_PI)
 
-        body = Shapes.polygon({
-            position: new Vector(x, y), 
-            radius, sides, density: 1.5, restitution: 1 / 6
-        })
-    } else {
-        let width = Random.float(2, 6)
-        let height = Random.float(2, 6)
+//         WORLD.addBody(body)
+//         colors.push(Random.fromArray(Object.values(DefaultColors)))
+//     }
+// }
 
-        body = Shapes.rectangle({
-            position: new Vector(x, y), 
-            width, height, density: 1.5, restitution: 1 / 6
-        })
-    }
+let bodyA = Shapes.polygon({
+    position: new Vector(2, 4), radius: 2, sides: 5,
+    density: 2.5, restitution: 0.6
+})
 
-    body.transform.rotation = Random.float(0, MathF.TWO_PI)
+WORLD.addBody(bodyA)
+colors.push(Random.fromArray(Object.values(DefaultColors)))
 
-    WORLD.addBody(body)
-    colors.push(Random.fromArray(Object.values(DefaultColors)))
-}
+let bodyB = Shapes.polygon({
+    position: new Vector(0, 0), radius: 2, sides: 3,
+    density: 2.5, restitution: 0.6
+})
+
+WORLD.addBody(bodyB)
+colors.push(Random.fromArray(Object.values(DefaultColors)))
 
 let fps = 0
 
 ENGINE.on('tick', (delta) => {
-    let iterations = 16
+    let iterations = 4
 
     for (let i = 0; i < iterations; i++)
         WORLD.step(delta / iterations)

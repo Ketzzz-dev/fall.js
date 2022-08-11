@@ -8,7 +8,7 @@ export interface RendererEvents {
 }
 
 export class Renderer extends EventEmitter<RendererEvents> {
-    public static readonly PIXELS_PER_UNIT = 16
+    public static readonly PIXELS_PER_UNIT = 32
     public static readonly MIN_DIMENSION = 64
     public static readonly MAX_DIMENSION = 2048
 

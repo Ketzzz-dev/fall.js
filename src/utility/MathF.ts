@@ -7,11 +7,11 @@ export namespace MathF {
     /**
      * A constant for PI / 2.
      */
-    export const PI_OVER_TWO = 1.5707963267948966
+    export const PI_OVER_TWO = Math.PI / 2
     /**
      * A constant for 2(PI).
      */
-    export const TWO_PI = 6.283185307179586
+    export const TWO_PI = 2 * Math.PI
 
     // vector math
     /**

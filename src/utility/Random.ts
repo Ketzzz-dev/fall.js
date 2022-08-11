@@ -11,6 +11,7 @@ export namespace Random {
      * @param max The maximum range.
      */
     export function float(min = 0, max = 0): number {
+        // ensuring that our range is valid.
         if (min == max)
             return min
         if (min > max)
@@ -25,6 +26,7 @@ export namespace Random {
      * @param max The maximum range.
      */
     export function integer(min = 0, max = 0): number {
+        // ensuring that our range is valid.
         if (min == max)
             return min
         if (min > max)

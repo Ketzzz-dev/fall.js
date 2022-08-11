@@ -4,30 +4,27 @@ import { Colliders } from './Colliders'
 import { CollisionPoints } from './CollisionManifold'
 import { MathF } from '../../utility/MathF'
 
-export namespace Algorithms {
+export namespace Collisions {
     export type Projection = [min: number, max: number]
 
-    export function getClosestPointOnPolygon(center: Vector, polygonVertices: Vector[]): Vector {
+    export function findClosestPointOnPolygon(center: Vector, polygonVertices: Vector[]): Vector {
         let point = Vector.ZERO
         let minDistance = Number.MAX_VALUE
 
         for (let vertex of polygonVertices) {
             let distance = MathF.distance(vertex, center)
 
-            if (distance < minDistance) {
-                minDistance = distance
-                point = vertex
-            }
+            if (distance < minDistance) [minDistance, point] = [distance, vertex]
         }
 
         return point
     }
 
-    export function projectVertices(vertices: Vector[], axis: Vector): Projection {
+    export function projectPolygon(polygonVertices: Vector[], axis: Vector): Projection {
         let min = Number.MAX_VALUE
         let max = Number.MIN_VALUE
 
-        for (let vertex of vertices) {
+        for (let vertex of polygonVertices) {
             let projection = MathF.dot(vertex, axis)
 
             if (projection < min) min = projection
@@ -46,8 +43,7 @@ export namespace Algorithms {
         let min = MathF.dot(start, axis)
         let max = MathF.dot(end, axis)
 
-        if (min > max)
-            [min, max] = [max, min]
+        if (min > max) [min, max] = [max, min]
 
         return [min, max]
     }
@@ -82,17 +78,14 @@ export namespace Algorithms {
             let edge = Vector.subtract(end, start)
             let axis = new Vector(-edge.y, edge.x).normalized
 
-            let [minA, maxA] = Algorithms.projectVertices(verticesA, axis)
-            let [minB, maxB] = Algorithms.projectVertices(verticesB, axis)
+            let [minA, maxA] = Collisions.projectPolygon(verticesA, axis)
+            let [minB, maxB] = Collisions.projectPolygon(verticesB, axis)
 
             if (minA >= maxB || minB >= maxA) return
 
             let overlap = Math.min(maxB - minA, maxA - minB)
 
-            if (overlap < depth) {
-                depth = overlap
-                normal = axis
-            }
+            if (overlap < depth) [depth, normal] = [overlap, axis]
         }
         for (let i = 0; i < verticesB.length; i++) {
             let start = verticesB[i]
@@ -101,17 +94,14 @@ export namespace Algorithms {
             let edge = Vector.subtract(end, start)
             let axis = new Vector(-edge.y, edge.x).normalized
 
-            let [minA, maxA] = Algorithms.projectVertices(verticesA, axis)
-            let [minB, maxB] = Algorithms.projectVertices(verticesB, axis)
+            let [minA, maxA] = Collisions.projectPolygon(verticesA, axis)
+            let [minB, maxB] = Collisions.projectPolygon(verticesB, axis)
 
             if (minA >= maxB || minB >= maxA) return
 
             let overlap = Math.min(maxB - minA, maxA - minB)
 
-            if (overlap < depth) {
-                depth = overlap
-                normal = axis
-            }
+            if (overlap < depth) [depth, normal] = [overlap, axis]
         }
 
         let direction = Vector.subtract(transformB.position, transformA.position)
@@ -137,8 +127,8 @@ export namespace Algorithms {
             let edge = Vector.subtract(end, start)
             let axis = new Vector(-edge.y, edge.x).normalized
 
-            let [minA, maxA] = Algorithms.projectVertices(polygonVertices, axis)
-            let [minB, maxB] = Algorithms.projectCircle(transformA.position, colliderA.radius, axis)
+            let [minA, maxA] = Collisions.projectPolygon(polygonVertices, axis)
+            let [minB, maxB] = Collisions.projectCircle(transformA.position, colliderA.radius, axis)
 
             if (minA >= maxB || minB >= maxA) return
 
@@ -150,11 +140,11 @@ export namespace Algorithms {
             }
         }
 
-        let closestPoint = getClosestPointOnPolygon(transformA.position, polygonVertices)
+        let closestPoint = findClosestPointOnPolygon(transformA.position, polygonVertices)
         let axis = Vector.subtract(closestPoint, transformA.position).normalized
 
-        let [minA, maxA] = Algorithms.projectVertices(polygonVertices, axis)
-        let [minB, maxB] = Algorithms.projectCircle(transformA.position, colliderA.radius, axis)
+        let [minA, maxA] = Collisions.projectPolygon(polygonVertices, axis)
+        let [minB, maxB] = Collisions.projectCircle(transformA.position, colliderA.radius, axis)
 
         if (minA >= maxB || minB >= maxA) return
 
