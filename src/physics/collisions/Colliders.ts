@@ -9,132 +9,80 @@ import { Collisions } from './Collisions'
  * The namespace of different shape colliders.
  */
 export namespace Colliders {
-    /**
-     * An abstract base struct that can be stored, and tested for collision with other shape colliders.
-     */
-    export abstract class BaseCollider {
-        /**
-         * Returns the points of collision between the collider and an arbitrary collider if there was intersection.
-         * 
-         * @param thisTransform The transform of the collider's parent body.
-         * @param otherCollider The collider to test collision with.
-         * @param otherTransform The transform to test collision with.
-         */
-        public testCollision(thisTransform: Transform, otherCollider: BaseCollider, otherTransform: Transform): CollisionPoints | undefined | null {
-            if (!AABB.overlaps(this.getBounds(thisTransform), otherCollider.getBounds(otherTransform))) return
-
-            if (otherCollider instanceof CircleCollider) return this.testCircleCollision(thisTransform, otherCollider, otherTransform)
-            else if (otherCollider instanceof PolygonCollider) return this.testPolygonCollision(thisTransform, otherCollider, otherTransform)
-            
+    export function intersects(
+        colliderA: BaseCollider, transformA: Transform,
+        colliderB: BaseCollider, transformB: Transform
+    ): CollisionPoints | undefined {
+        if (!AABB.overlaps(colliderA.getBounds(transformA), colliderB.getBounds(transformB)))
             return
+
+        if (colliderA instanceof CircleCollider) {
+            if (colliderB instanceof CircleCollider) {
+                return Collisions.findCircleCollisionPoints(colliderA, transformA, colliderB, transformB)
+            } else if (colliderB instanceof PolygonCollider) {
+                return Collisions.findCirclePolygonCollisionPoints(colliderA, transformA, colliderB, transformB)
+            }
+        } else if (colliderA instanceof PolygonCollider) {
+            if (colliderB instanceof CircleCollider) {
+                let points = Collisions.findCirclePolygonCollisionPoints(colliderB, transformB, colliderA, transformA)
+
+                if (points) points.normal = points.normal.negative
+
+                return points
+            } else if (colliderB instanceof PolygonCollider) {
+                return Collisions.findPolygonCollisionPoints(colliderA, transformA, colliderB, transformB)
+            }
         }
 
-        /**
-         * Returns the bounding box of the collider.
-         * 
-         * @param thisTransform The transform of this collider's parent body.
-         */
-        public abstract getBounds(thisTransform: Transform): AABB
-    
-        /**
-         * Returns the points of collision between the collider and a circle collider if there was intersection.
-         * 
-         * @param thisTransform The transform of the collider's parent body.
-         * @param otherCollider The collider to test collision with.
-         * @param otherTransform The transform to test collision with.
-         */
-        public abstract testCircleCollision(thisTransform: Transform, otherCollider: CircleCollider, otherTransform: Transform): CollisionPoints | undefined | null
-        /**
-         * Returns the points of collision between the collider and a polygon collider if there was intersection.
-         * 
-         * @param thisTransform The transform of the collider's parent body.
-         * @param otherCollider The collider to test collision with.
-         * @param otherTransform The transform to test collision with.
-         */
-        public abstract testPolygonCollision(thisTransform: Transform, otherCollider: PolygonCollider, otherTransform: Transform): CollisionPoints | undefined | null
+        return
     }
-    
-    /**
-     * A struct that stores geometrical properties of a circle and can be tested for collision with other shape type colliders.
-     */
-    export class CircleCollider extends BaseCollider {
-        /**
-         * The radius of the circle.
-         */
-        public readonly radius: number
+
+    export abstract class BaseCollider {
         
-        /**
-         * @param radius The radius of the circle
-         */
+        public abstract getBounds(parentTransform: Transform): AABB
+    }
+
+    export class CircleCollider extends BaseCollider {
+        public readonly radius: number
+
         public constructor (radius: number) {
             super()
-            
+
             this.radius = radius
         }
 
-        public getBounds(thisTransform: Transform): AABB {
-            let { position } = thisTransform
+        public getBounds(parentTransform: Transform): AABB {
+            let { position } = parentTransform
 
             return new AABB(
                 new Vector(position.x - this.radius, position.y - this.radius),
                 new Vector(position.x + this.radius, position.y + this.radius)
             )
         }
-        
-        public testCircleCollision(thisTransform: Transform, otherCollider: CircleCollider, otherTransform: Transform): CollisionPoints | undefined | null {
-            return Collisions.findCircleCollisionPoints(this, thisTransform, otherCollider, otherTransform)
-        }
-        public testPolygonCollision(thisTransform: Transform, otherCollider: PolygonCollider, otherTransform: Transform): CollisionPoints | undefined | null {
-            return Collisions.findCirclePolygonCollisionPoints(this, thisTransform, otherCollider, otherTransform)
-        }
     }
-    /**
-     * A struct that stores geometrical properties of a polygon and can be tested for collision with other shape type colliders.
-     */
     export class PolygonCollider extends BaseCollider {
-        /**
-         * A static constant that stores the minimum sides a polygon can have.
-         */
-        public static readonly MIN_SIDES = 3
-        /**
-         * A static constant that stores the maximum sides a polygon can have.
-         */
-        public static readonly MAX_SIDES = 25
-    
-        /**
-         * The origin of the collider's vertices.
-         */
-        public readonly originVertices: Vector[]
-    
-        /**
-         * @param vertices The vertices of the collider.
-         */
+        private _vertices: Vector[]
+
         public constructor (vertices: Vector[]) {
             super()
-    
-            this.originVertices = vertices
+
+            this._vertices = vertices
         }
-    
-        /**
-         * Returns the polygon's vertices translated and rotated to the collider's parent body's transform.
-         * 
-         * @param thisTransform The transform of the collider's parent body.
-         * @returns 
-         */
-        public getTransformedVertices(thisTransform: Transform): Vector[] {
-            return this.originVertices.map(v => Vector.add(
-                MathF.rotate(v, thisTransform.rotation),
-                thisTransform.position
+
+        public getTransformedVertices(parentTransform: Transform): Vector[] {
+            return this._vertices.map(v => Vector.add(
+                MathF.rotate(v, parentTransform.rotation),
+                parentTransform.position
             ))
         }
 
-        public getBounds(thisTransform: Transform): AABB {
-            let minX = Number.MAX_VALUE
-            let minY = Number.MAX_VALUE
-            let maxX = Number.MIN_VALUE
-            let maxY = Number.MIN_VALUE
+        public getBounds(parentTransform: Transform): AABB {
+            let minX = Number.POSITIVE_INFINITY
+            let minY = Number.POSITIVE_INFINITY
+            let maxX = Number.NEGATIVE_INFINITY
+            let maxY = Number.NEGATIVE_INFINITY
 
-            let thisVertices = this.getTransformedVertices(thisTransform)
+            let thisVertices = this.getTransformedVertices(parentTransform)
 
             for (let vertex of thisVertices) {
                 if (vertex.x < minX) minX = vertex.x
@@ -144,18 +92,6 @@ export namespace Colliders {
             }
 
             return new AABB(new Vector(minX, minY), new Vector(maxX, maxY))
-        }
-    
-        public testCircleCollision(thisTransform: Transform, otherCollider: CircleCollider, otherTransform: Transform): CollisionPoints | undefined | null {
-            let points = Collisions.findCirclePolygonCollisionPoints(otherCollider, otherTransform, this, thisTransform)
-    
-            if (points)
-                points.normal = points.normal.negative
-    
-            return points
-        }
-        public testPolygonCollision(thisTransform: Transform, otherCollider: PolygonCollider, otherTransform: Transform): CollisionPoints | undefined | null {
-            return Collisions.findPolygonCollisionPoints(this, thisTransform, otherCollider, otherTransform)
         }
     }
 }

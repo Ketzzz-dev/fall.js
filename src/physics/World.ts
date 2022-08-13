@@ -2,6 +2,9 @@ import { MathF } from '../utility/MathF'
 import { Vector } from './Vector'
 import { Body } from './Body'
 import { CollisionManifold } from './collisions/CollisionManifold'
+import { Collisions } from './collisions/Collisions'
+import { Colliders } from './collisions/Colliders'
+import { Pair } from '../index'
 
 export class World {
     private _bodies = Array<Body>()
@@ -26,10 +29,9 @@ export class World {
                 if (a == b) break
                 if (a.isStatic && b.isStatic) continue 
 
-                let points = a.collider.testCollision(a.transform, b.collider, b.transform)
+                let points = Colliders.intersects(a.collider, a.transform, b.collider, b.transform)
 
-                if (points)
-                    collisions.push(new CollisionManifold(a, b, points))
+                if (points) collisions.push(new CollisionManifold(a, b, points))
             }
         }
 
@@ -37,26 +39,26 @@ export class World {
     }
 
     public resolveCollision(collision: CollisionManifold): void {
-        let { pair: { a, b }, points } = collision
+        let { bodies: { a, b }, points: { normal, depth } } = collision
 
         let totalMass = a.inverseMass + b.inverseMass
-        let separationAmount = Vector.multiply(points.normal, points.depth)
+        let penetration = Vector.multiply(normal, depth)
 
-        if (!a.isStatic) a.transform.position = Vector.subtract(a.transform.position, Vector.multiply(separationAmount, a.inverseMass / totalMass))
-        if (!b.isStatic) b.transform.position = Vector.add(b.transform.position, Vector.multiply(separationAmount, b.inverseMass / totalMass))
+        if (!a.isStatic) a.transform.position = Vector.subtract(a.transform.position, Vector.multiply(penetration, a.inverseMass / totalMass))
+        if (!b.isStatic) b.transform.position = Vector.add(b.transform.position, Vector.multiply(penetration, b.inverseMass / totalMass))
 
-        // let contactVelocity = Vector.subtract(b.linearVelocity, a.linearVelocity)
-        // let impulseForce = MathF.dot(contactVelocity, points.normal)
+        let contactVelocity = Vector.subtract(b.linearVelocity, a.linearVelocity)
+        let impulseForce = MathF.dot(contactVelocity, normal)
 
-        // if (impulseForce > 0)
-        //     return
+        if (impulseForce > 0)
+            return
 
-        // let restitution = Math.max(a.restitution, b.restitution)
-        // let impulseMagnitude = (-(1 + restitution) * impulseForce) / totalMass
+        let restitution = Math.min(a.restitution, b.restitution)
+        let impulseMagnitude = (-(1 + restitution) * impulseForce) / totalMass
 
-        // let fullImpulse = Vector.multiply(points.normal, impulseMagnitude)
+        let fullImpulse = Vector.multiply(normal, impulseMagnitude)
 
-        // if (!a.isStatic) a.linearVelocity = Vector.subtract(a.linearVelocity, Vector.multiply(fullImpulse, a.inverseMass))
-        // if (!b.isStatic) b.linearVelocity = Vector.add(b.linearVelocity, Vector.multiply(fullImpulse, b.inverseMass))
+        if (!a.isStatic) a.linearVelocity = Vector.subtract(a.linearVelocity, Vector.multiply(fullImpulse, a.inverseMass))
+        if (!b.isStatic) b.linearVelocity = Vector.add(b.linearVelocity, Vector.multiply(fullImpulse, b.inverseMass))
     }
 }

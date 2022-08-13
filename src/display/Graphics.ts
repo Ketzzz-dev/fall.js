@@ -31,6 +31,8 @@ export class Graphics {
 
         this.context.clearRect(0, 0, canvas.width, canvas.height)
         this.context.setTransform(camera.zoom, 0, 0, camera.zoom, cameraScreenX, cameraScreenY)
+
+        this.context.lineJoin = 'round'
     }
     public endDrawing(): void {
         if (!this.isDrawing)
@@ -151,8 +153,10 @@ export class Graphics {
         endX *= Renderer.PIXELS_PER_UNIT
         endY *= Renderer.PIXELS_PER_UNIT
         
+        this.context.beginPath()
         this.context.moveTo(startX, startY)
         this.context.lineTo(endX, endY)
+        this.context.closePath()
         this.context.stroke()
 
         return this

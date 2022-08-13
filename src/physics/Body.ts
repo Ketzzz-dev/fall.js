@@ -18,6 +18,7 @@ export class Body {
     public linearVelocity = Vector.ZERO
     public force = Vector.ZERO
     public angularVelocity = 0
+    public torque = 0
 
     public readonly density: number
     public readonly area: number
@@ -55,14 +56,17 @@ export class Body {
         // velocity integration
         this.force = Vector.add(this.force, Vector.multiply(this.mass, gravity))
 
-        let acceleration = Vector.divide(this.force, this.mass)
+        let linearAcceleration = Vector.divide(this.force, this.mass)
+        let angularAcceleration = this.torque / this.mass
 
-        this.linearVelocity = Vector.add(this.linearVelocity, Vector.multiply(acceleration, delta))
+        this.linearVelocity = Vector.add(this.linearVelocity, Vector.multiply(linearAcceleration, delta))
+        this.angularVelocity += angularAcceleration * delta
 
         // position integration
         this.transform.position = Vector.add(this.transform.position, Vector.multiply(this.linearVelocity, delta))
-        this.transform.rotation += this.angularVelocity
+        this.transform.rotation += this.angularVelocity * delta
         
         this.force = Vector.ZERO
+        this.torque = 0
     }
 }

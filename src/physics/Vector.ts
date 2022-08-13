@@ -127,5 +127,3 @@ export class Vector {
         return `x: ${this.x}, y: ${this.y}`
     }
 }
-
-new Vector(0, 0).x

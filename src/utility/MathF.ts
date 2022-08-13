@@ -20,7 +20,7 @@ export namespace MathF {
      * @param a The source vector. 
      * @param b The destination Vector.
      */
-    export function distanceSqrd(a: Vector, b: Vector): number {
+    export function distanceSq(a: Vector, b: Vector): number {
         let deltaX = a.x - b.x
         let deltaY = a.y - b.y
     
@@ -61,14 +61,18 @@ export namespace MathF {
      * 
      * @param v The vector to rotate.
      * @param x The angle, in radians.
+     * @param origin The origin point of the vector.
      */
-    export function rotate(v: Vector, x: number): Vector {
+    export function rotate(v: Vector, x: number, origin = Vector.ZERO): Vector {
         let sin = Math.sin(x)
         let cos = Math.cos(x)
 
+        let deltaX = v.x - origin.x
+        let deltaY = v.y - origin.y
+
         return new Vector(
-            cos * v.x - sin * v.y,
-            sin * v.x + cos * v.y
+            cos * deltaX - sin * deltaY,
+            sin * deltaX + cos * deltaY
         )
     }
 
@@ -102,5 +106,17 @@ export namespace MathF {
             throw new RangeError('`min` is greater than `max`.')
 
         return x >= min && x <= max
+    }
+
+    export function average(...numbers: number[]): number {
+        let total = 0
+
+        for (let number of numbers) total += number
+
+        return numbers.length / total
+    }
+
+    export function fuzzyEquals(a: number, b: number, epsilon = Number.EPSILON): boolean {
+        return Math.abs(a - b) >= epsilon
     }
 }

@@ -3,17 +3,13 @@ import { Body } from '../Body'
 import { Pair } from '../../utility/Pair'
 
 /**
- * An interface that stores the point of contacts, the normal, and the depth from a collision.
+ * An object that stores the point of contacts, the normal, and the depth from a collision.
  */
 export interface CollisionPoints {
     /**
-     * The first contact point.
+     * The points of contact where collision occured.
      */
-    a: Vector
-    /**
-     * The second contact point.
-     */
-    b: Vector
+    contacts: Pair<Vector>
 
     /**
      * The normal of the collision.
@@ -26,13 +22,13 @@ export interface CollisionPoints {
 }
 
 /**
- * A struct that stores the pair of bodies that collided and the points of collision.
+ * An object that stores the pair of bodies that collided and the points of collision.
  */
 export class CollisionManifold {
     /**
      * The pair of bodies that collided.
      */
-    public readonly pair: Pair<Body>
+    public readonly bodies: Pair<Body>
     /**
      * The points of contact.
      */
@@ -44,7 +40,7 @@ export class CollisionManifold {
      * @param points The points of contact.
      */
     public constructor (a: Body, b: Body, points: CollisionPoints) {
-        this.pair = new Pair(a, b)
+        this.bodies = new Pair(a, b)
         this.points = points
     }
 }

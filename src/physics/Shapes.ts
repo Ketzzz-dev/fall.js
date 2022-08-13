@@ -127,7 +127,7 @@ export namespace Shapes {
             )
         }
 
-        let area = (radius * radius * sides * Math.sin(MathF.TWO_PI / sides)) / 2
+        let area = (radius * radius * sides * Math.sin(theta)) / 2
 
         return new Body({
             position, density, area, isStatic, restitution,

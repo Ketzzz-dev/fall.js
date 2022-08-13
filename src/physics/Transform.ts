@@ -2,11 +2,10 @@ import { Vector } from './Vector'
 
 export class Transform {
     public position: Vector
+    public rotation: number
 
-    public scale = Vector.ZERO
-    public rotation = 0
-
-    public constructor (position: Vector) {
+    public constructor (position: Vector, rotation = 0) {
         this.position = position
+        this.rotation = rotation
     }
 }
