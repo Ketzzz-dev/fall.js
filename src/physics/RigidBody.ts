@@ -3,8 +3,9 @@ import { Vector } from './Vector'
 import { Colliders } from './collisions/Colliders'
 import { Transform } from './Transform'
 
-export interface BodyOptions {
+export interface RigidBodyOptions {
     position: Vector
+    rotation?: number
     density: number
     area: number
     restitution: number
@@ -12,7 +13,7 @@ export interface BodyOptions {
     collider: Colliders.BaseCollider
 }
 
-export class Body {
+export class RigidBody {
     public transform: Transform
 
     public linearVelocity = Vector.ZERO
@@ -31,10 +32,10 @@ export class Body {
 
     public readonly collider: Colliders.BaseCollider
 
-    public constructor (options: BodyOptions) {
-        let { position, density, area, isStatic, restitution, collider } = options
+    public constructor (options: RigidBodyOptions) {
+        let { position, rotation, density, area, isStatic, restitution, collider } = options
 
-        this.transform = new Transform(position)
+        this.transform = new Transform(position, rotation)
 
         this.density = density
         this.area = area

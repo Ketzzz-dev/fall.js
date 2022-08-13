@@ -61,6 +61,9 @@ export namespace Colliders {
         }
     }
     export class PolygonCollider extends BaseCollider {
+        public static readonly MIN_VERTICES = 3
+        public static readonly MAX_VERTICES = 25
+
         private _vertices: Vector[]
 
         public constructor (vertices: Vector[]) {

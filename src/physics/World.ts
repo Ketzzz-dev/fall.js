@@ -1,19 +1,19 @@
 import { MathF } from '../utility/MathF'
 import { Vector } from './Vector'
-import { Body } from './Body'
+import { RigidBody } from './RigidBody'
 import { CollisionManifold } from './collisions/CollisionManifold'
 import { Collisions } from './collisions/Collisions'
 import { Colliders } from './collisions/Colliders'
 import { Pair } from '../index'
 
 export class World {
-    private _bodies = Array<Body>()
+    private _bodies = Array<RigidBody>()
     private _gravity = new Vector(0, 9.81)
     
-    public addBody(body: Body): void {
+    public addBody(body: RigidBody): void {
         this._bodies.push(body)
     }
-    public deleteBody(body: Body): void {
+    public deleteBody(body: RigidBody): void {
         if (!this._bodies.includes(body)) return
 
         this._bodies = this._bodies.splice(this._bodies.indexOf(body), 1)
@@ -21,7 +21,7 @@ export class World {
 
     public step(delta: number): void {
         for (let body of this._bodies) body.step(delta, this._gravity)
-
+        
         let collisions = Array<CollisionManifold>()
 
         for (let a of this._bodies) {
@@ -34,7 +34,6 @@ export class World {
                 if (points) collisions.push(new CollisionManifold(a, b, points))
             }
         }
-
         for (let collision of collisions) this.resolveCollision(collision)
     }
 

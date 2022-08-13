@@ -1,5 +1,5 @@
 import { MathF } from '../utility/MathF'
-import { Body } from './Body'
+import { RigidBody } from './RigidBody'
 import { Colliders } from './collisions/Colliders'
 import { Vector } from './Vector'
 
@@ -15,6 +15,7 @@ export namespace Shapes {
          * The position of the body.
          */
         position: Vector
+        rotation?: number
         /**
          * The density of the body, in g/cm^2.
          */
@@ -69,13 +70,13 @@ export namespace Shapes {
      * 
      * @param options The configuration object.
      */
-    export function circle(options: Shapes.CircleOptions): Body {
-        let { radius, density, position, isStatic, restitution } = options
+    export function circle(options: Shapes.CircleOptions): RigidBody {
+        let { radius, density, position, rotation, isStatic, restitution } = options
 
         let area = radius * radius * Math.PI
 
-        return new Body({
-            position, density, area, isStatic, restitution,
+        return new RigidBody({
+            position, rotation, density, area, isStatic, restitution,
             collider: new Colliders.CircleCollider(radius)
         })
     }
@@ -84,8 +85,8 @@ export namespace Shapes {
      * 
      * @param options The configuration object.
      */
-    export function rectangle(options: Shapes.RectangleOptions): Body {
-        let { width, height, density, position, isStatic, restitution } = options
+    export function rectangle(options: Shapes.RectangleOptions): RigidBody {
+        let { width, height, density, position, rotation, isStatic, restitution } = options
         
         let left = .5 * -width
         let right = left + width
@@ -101,8 +102,8 @@ export namespace Shapes {
         
         let area = width * height
 
-        return new Body({
-            position, density, area, isStatic, restitution,
+        return new RigidBody({
+            position, rotation, density, area, isStatic, restitution,
             collider: new Colliders.PolygonCollider(vertices)
         })
     }
@@ -111,8 +112,8 @@ export namespace Shapes {
      * 
      * @param options The configuration object.
      */
-    export function polygon(options: Shapes.PolygonOptions): Body {
-        let { sides, radius, position, density, isStatic, restitution } = options
+    export function polygon(options: Shapes.PolygonOptions): RigidBody {
+        let { sides, radius, position, rotation, density, isStatic, restitution } = options
 
         let theta = MathF.TWO_PI / sides
 
@@ -129,8 +130,8 @@ export namespace Shapes {
 
         let area = (radius * radius * sides * Math.sin(theta)) / 2
 
-        return new Body({
-            position, density, area, isStatic, restitution,
+        return new RigidBody({
+            position, rotation, density, area, isStatic, restitution,
             collider: new Colliders.PolygonCollider(vertices)
         })
     }

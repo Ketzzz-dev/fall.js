@@ -1,5 +1,5 @@
 import { Vector } from '../Vector'
-import { Body } from '../Body'
+import { RigidBody } from '../RigidBody'
 import { Pair } from '../../utility/Pair'
 
 /**
@@ -28,7 +28,7 @@ export class CollisionManifold {
     /**
      * The pair of bodies that collided.
      */
-    public readonly bodies: Pair<Body>
+    public readonly bodies: Pair<RigidBody>
     /**
      * The points of contact.
      */
@@ -39,7 +39,7 @@ export class CollisionManifold {
      * @param b The second body.
      * @param points The points of contact.
      */
-    public constructor (a: Body, b: Body, points: CollisionPoints) {
+    public constructor (a: RigidBody, b: RigidBody, points: CollisionPoints) {
         this.bodies = new Pair(a, b)
         this.points = points
     }

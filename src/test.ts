@@ -1,4 +1,4 @@
-import { Body, Engine, Colliders, Random, Renderer, Vector, World, MathF, Shapes, AABB } from '.'
+import { RigidBody, Engine, Colliders, Random, Renderer, Vector, World, MathF, Shapes, AABB } from '.'
 
 const ENGINE = new Engine
 const RENDERER = new Renderer(innerWidth, innerHeight)
@@ -27,43 +27,17 @@ let ground = Shapes.rectangle({
 
 WORLD.addBody(ground)
 
-// let bodyA = Shapes.polygon({
-//     position: new Vector(min.x + padding.x * 2, 1), radius: 3, sides: 5,
-//     density: 2.5, restitution: 0.3
-// })
-
-// WORLD.addBody(bodyA)
-
-// let bodyB = Shapes.polygon({
-//     position: new Vector(max.x - padding.x * 4, -1), radius: 2, sides: 7,
-//     density: 2.5, restitution: 0.3
-// })
-
-// bodyB.transform.rotation = Math.PI
-
-// WORLD.addBody(bodyB)
-
-// let bodyC = Shapes.polygon({
-//     position: new Vector(max.x - padding.x * 2, -4), radius: 2, sides: 3,
-//     density: 2.5, restitution: 0.3
-// })
-
-// bodyC.transform.rotation = -MathF.PI_OVER_TWO
-
-// WORLD.addBody(bodyC)
-
 for (let i = 0; i < 20; i++) {
     let x = Random.float(min.x + padding.x * 2, max.x - padding.x * 2)
     let y = Random.float(min.y + padding.y, 0)
+    let rotation = Random.float(0, MathF.TWO_PI)
     let radius = Random.float(2, 4)
     let sides = Random.integer(2, 5) * 2 - 1 
 
     let body = Shapes.polygon({
-        position: new Vector(x, y), radius, sides,
+        position: new Vector(x, y), rotation, radius, sides,
         density: 2.5, restitution: 0.3
     })
-
-    body.transform.rotation = Random.float(0, MathF.TWO_PI)
 
     WORLD.addBody(body)
 }
@@ -82,10 +56,13 @@ ENGINE.on('tick', (delta) => {
     RENDERER.update()
 })
 RENDERER.on('render', (graphics) => {
-    let bodies = Reflect.get(WORLD, '_bodies') as Body[]
+    let bodies = Reflect.get(WORLD, '_bodies') as RigidBody[]
 
     for (let body of bodies) {
         let { transform, collider } = body
+
+        if (!AABB.overlaps(collider.getBounds(transform), RENDERER.camera.bounds))
+            continue
 
         graphics.drawCircleFill(transform.position.x, transform.position.y, .1, DefaultColors.Red)
 

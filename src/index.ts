@@ -10,7 +10,7 @@ export * from './display/Graphics'
 export * from './geometry/AABB'
 
 // physics modules
-export * from './physics/Body'
+export * from './physics/RigidBody'
 export * from './physics/Shapes'
 export * from './physics/Transform'
 export * from './physics/Vector'
