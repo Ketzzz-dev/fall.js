@@ -1,4 +1,4 @@
-import { MathF } from '../utility/MathF'
+import { FMath } from '../utility/FMath'
 import { Vector } from './Vector'
 import { Colliders } from './collisions/Colliders'
 import { Transform } from './Transform'
@@ -45,7 +45,7 @@ export class RigidBody {
         this.mass = area * density
         this.inverseMass = this.isStatic ? 0 : 1 / this.mass
 
-        this.restitution = MathF.clamp(restitution)
+        this.restitution = FMath.clamp(restitution)
 
         this.collider = collider
     }

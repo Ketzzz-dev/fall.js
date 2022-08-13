@@ -1,4 +1,4 @@
-import { MathF } from './MathF'
+import { FMath } from './FMath'
 
 /**
  * A collection of simplified functions for generating psuedo-random data.
@@ -40,7 +40,7 @@ export namespace Random {
      * @param probability The probability in fraction.
      */
     export function boolean(probability = 0.5): boolean {
-        probability = MathF.clamp(probability)
+        probability = FMath.clamp(probability)
 
         return Math.random() <= probability
     }

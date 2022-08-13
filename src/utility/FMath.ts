@@ -3,7 +3,7 @@ import { Vector } from '../physics/Vector'
 /**
  * A collection of constants and methods to perform mathematical computing.
  */
-export namespace MathF {
+export namespace FMath {
     /**
      * A constant for PI / 2.
      */

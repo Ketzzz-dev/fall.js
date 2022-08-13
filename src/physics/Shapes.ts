@@ -1,4 +1,4 @@
-import { MathF } from '../utility/MathF'
+import { FMath } from '../utility/FMath'
 import { RigidBody } from './RigidBody'
 import { Colliders } from './collisions/Colliders'
 import { Vector } from './Vector'
@@ -115,7 +115,7 @@ export namespace Shapes {
     export function polygon(options: Shapes.PolygonOptions): RigidBody {
         let { sides, radius, position, rotation, density, isStatic, restitution } = options
 
-        let theta = MathF.TWO_PI / sides
+        let theta = FMath.TWO_PI / sides
 
         let vertices = Array<Vector>(sides)
 

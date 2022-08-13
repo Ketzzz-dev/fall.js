@@ -1,5 +1,5 @@
 import { AABB } from '../../geometry/AABB'
-import { MathF } from '../../utility/MathF'
+import { FMath } from '../../utility/FMath'
 import { Transform } from '../Transform'
 import { Vector } from '../Vector'
 import { CollisionPoints } from './CollisionManifold'
@@ -74,7 +74,7 @@ export namespace Colliders {
 
         public getTransformedVertices(parentTransform: Transform): Vector[] {
             return this._vertices.map(v => Vector.add(
-                MathF.rotate(v, parentTransform.rotation),
+                FMath.rotate(v, parentTransform.rotation),
                 parentTransform.position
             ))
         }

@@ -4,7 +4,7 @@
         "src": { "url": "/dist" }
     },
     "plugins": [
-        ["@snowpack/plugin-typescript"]
+        ["@snowpack/plugin-typescript", { "tsc": "tsc" }]
     ],
     "optimize": {
         "bundle": true,

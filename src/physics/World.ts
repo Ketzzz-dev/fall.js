@@ -1,4 +1,4 @@
-import { MathF } from '../utility/MathF'
+import { FMath } from '../utility/FMath'
 import { Vector } from './Vector'
 import { RigidBody } from './RigidBody'
 import { CollisionManifold } from './collisions/CollisionManifold'
@@ -47,7 +47,7 @@ export class World {
         if (!b.isStatic) b.transform.position = Vector.add(b.transform.position, Vector.multiply(penetration, b.inverseMass / totalMass))
 
         let contactVelocity = Vector.subtract(b.linearVelocity, a.linearVelocity)
-        let impulseForce = MathF.dot(contactVelocity, normal)
+        let impulseForce = FMath.dot(contactVelocity, normal)
 
         if (impulseForce > 0)
             return

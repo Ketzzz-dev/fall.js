@@ -1,7 +1,7 @@
 import { Vector } from '../Vector'
 import { Transform } from '../Transform'
 import { Colliders } from './Colliders'
-import { MathF } from '../../utility/MathF'
+import { FMath } from '../../utility/FMath'
 import { CollisionPoints } from './CollisionManifold'
 import { Pair } from '../../index'
 
@@ -13,7 +13,7 @@ export namespace Collisions {
         let max = Number.NEGATIVE_INFINITY
 
         for (let vertex of vertices) {
-            let projection = MathF.dot(vertex, axis)
+            let projection = FMath.dot(vertex, axis)
 
             if (projection < min) min = projection
             if (projection > max) max = projection
@@ -28,8 +28,8 @@ export namespace Collisions {
         let start = Vector.add(center, pointToEdge)
         let end = Vector.subtract(center, pointToEdge)
 
-        let min = MathF.dot(start, axis)
-        let max = MathF.dot(end, axis)
+        let min = FMath.dot(start, axis)
+        let max = FMath.dot(end, axis)
 
         if (min >= max) [min, max] = [max, min]
 
@@ -41,7 +41,7 @@ export namespace Collisions {
         let minDistance = Number.POSITIVE_INFINITY
 
         for (let vertex of polygonVertices) {
-            let distance = MathF.distance(vertex, point)
+            let distance = FMath.distance(vertex, point)
 
             if (distance < minDistance) [minDistance, closestPoint] = [distance, vertex]
         }
@@ -54,7 +54,7 @@ export namespace Collisions {
         let ab = Vector.subtract(end, start)
         let ap = Vector.subtract(point, start)
 
-        let projection = MathF.dot(ap, ab)
+        let projection = FMath.dot(ap, ab)
         let distanceSq = projection / ab.magnitudeSq
 
         if (distanceSq < 0) closestPoint = start
@@ -115,7 +115,7 @@ export namespace Collisions {
             if (overlap < depth) [depth, normal] = [overlap, axis]
 
             let closestPoint = findClosestLineSegmentPoint(transformB.position, start, end)
-            let distanceSq = MathF.distanceSq(transformB.position, closestPoint)
+            let distanceSq = FMath.distanceSq(transformB.position, closestPoint)
 
             if (distanceSq < minDistanceSq) [minDistanceSq, pointA] = [distanceSq, closestPoint]
         }
@@ -139,14 +139,14 @@ export namespace Collisions {
             if (overlap < depth) [depth, normal] = [overlap, axis]
 
             let closestPoint = findClosestLineSegmentPoint(transformA.position, start, end)
-            let distanceSq = MathF.distanceSq(transformA.position, closestPoint)
+            let distanceSq = FMath.distanceSq(transformA.position, closestPoint)
 
             if (distanceSq < minDistanceSq) [minDistanceSq, pointB] = [distanceSq, closestPoint]
         }
 
         let direction = Vector.subtract(transformB.position, transformA.position)
 
-        if (MathF.dot(direction, normal) < 0) normal = normal.negative
+        if (FMath.dot(direction, normal) < 0) normal = normal.negative
 
         return {
             contacts: new Pair(pointA, pointB),
@@ -182,7 +182,7 @@ export namespace Collisions {
             if (overlap < depth) [depth, normal] = [overlap, axis]
 
             let closestPoint = findClosestLineSegmentPoint(circleTransform.position, start, end)
-            let distanceSq = MathF.distanceSq(circleTransform.position, closestPoint)
+            let distanceSq = FMath.distanceSq(circleTransform.position, closestPoint)
 
             if (distanceSq < minDistanceSq) [minDistanceSq, pointA] = [distanceSq, closestPoint]
         }
@@ -201,7 +201,7 @@ export namespace Collisions {
 
         let direction = Vector.subtract(polygonTransform.position, circleTransform.position)
 
-        if (MathF.dot(direction, normal) < 0) normal = normal.negative
+        if (FMath.dot(direction, normal) < 0) normal = normal.negative
 
         let pointB = Vector.add(circleTransform.position, Vector.multiply(normal, circleCollider.radius))
 
