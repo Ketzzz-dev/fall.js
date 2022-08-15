@@ -3,8 +3,6 @@ import { Vector } from './Vector'
 import { RigidBody } from './RigidBody'
 import { CollisionManifold } from './collisions/CollisionManifold'
 import { Collisions } from './collisions/Collisions'
-import { Colliders } from './collisions/Colliders'
-import { Pair } from '../index'
 
 export class World {
     private _bodies = Array<RigidBody>()
@@ -29,7 +27,7 @@ export class World {
                 if (a == b) break
                 if (a.isStatic && b.isStatic) continue 
 
-                let points = Colliders.intersects(a.collider, a.transform, b.collider, b.transform)
+                let points = Collisions.collides(a, b)
 
                 if (points) collisions.push(new CollisionManifold(a, b, points))
             }
@@ -46,18 +44,15 @@ export class World {
         if (!a.isStatic) a.transform.position = Vector.subtract(a.transform.position, Vector.multiply(penetration, a.inverseMass / totalMass))
         if (!b.isStatic) b.transform.position = Vector.add(b.transform.position, Vector.multiply(penetration, b.inverseMass / totalMass))
 
-        let contactVelocity = Vector.subtract(b.linearVelocity, a.linearVelocity)
-        let impulseForce = FMath.dot(contactVelocity, normal)
+        let relativeVelocity = Vector.subtract(b.linearVelocity, a.linearVelocity)
+        
+        let restitution = .5 * (a.restitution + b.restitution)
 
-        if (impulseForce > 0)
-            return
+        let j = (-(1 + restitution) * FMath.dot(relativeVelocity, normal)) / totalMass
 
-        let restitution = Math.min(a.restitution, b.restitution)
-        let impulseMagnitude = (-(1 + restitution) * impulseForce) / totalMass
+        let impulse = Vector.multiply(normal, j)
 
-        let fullImpulse = Vector.multiply(normal, impulseMagnitude)
-
-        if (!a.isStatic) a.linearVelocity = Vector.subtract(a.linearVelocity, Vector.multiply(fullImpulse, a.inverseMass))
-        if (!b.isStatic) b.linearVelocity = Vector.add(b.linearVelocity, Vector.multiply(fullImpulse, b.inverseMass))
+        if (!a.isStatic) a.linearVelocity = Vector.subtract(a.linearVelocity, Vector.multiply(impulse, a.inverseMass))
+        if (!b.isStatic) b.linearVelocity = Vector.add(b.linearVelocity, Vector.multiply(impulse, b.inverseMass))
     }
 }

@@ -1,7 +1,7 @@
 import { Engine } from './core/Engine'
 import { Renderer } from './core/Renderer'
 import { AABB } from './geometry/AABB'
-import { Colliders } from './physics/collisions/Colliders'
+import { CircleCollider, PolygonCollider } from './physics/collisions/Colliders'
 import { RigidBody } from './physics/RigidBody'
 import { Shapes } from './physics/Shapes'
 import { Vector } from './physics/Vector'
@@ -31,16 +31,34 @@ let padding = Vector.multiply(.1, Vector.subtract(max, min))
 
 let ground = Shapes.rectangle({
     position: new Vector(0, max.y - padding.y), width: (max.x - min.x) - padding.x, height: 3,
-    density: 3, restitution: 0.3, isStatic: true
+    density: 3, restitution: 0.2, isStatic: true
 })
 
 WORLD.addBody(ground)
 
+let platformA = Shapes.rectangle({
+    position: new Vector(min.x + padding.x * 3, min.y + padding.y * 5.5), rotation: .175 * FMath.PI_OVER_TWO,
+    width: .37 * ((max.x - min.x) - padding.x), height: 2,
+    density: 3, restitution: 0.2, isStatic: true
+})
+
+WORLD.addBody(platformA)
+
+let platformB = Shapes.rectangle({
+    position: new Vector(max.x - padding.x * 3, min.y + padding.y * 4), rotation: -.175 * FMath.PI_OVER_TWO,
+    width: .37 * ((max.x - min.x) - padding.x), height: 2,
+    density: 3, restitution: 0.2, isStatic: true
+})
+
+WORLD.addBody(platformB)
+
 for (let i = 0; i < 20; i++) {
-    let x = Random.float(min.x + padding.x * 2, max.x - padding.x * 2)
-    let y = Random.float(min.y + padding.y, 0)
+    let { min, max } = platformB.collider.getBounds(platformB.transform)
+
+    let x = Random.float(min.x + padding.x, max.x)
+    let y = Random.float(min.y, max.y) - 20
     let rotation = Random.float(0, FMath.TWO_PI)
-    let radius = Random.float(2, 4)
+    let radius = Random.float(1, 1.7)
     let sides = Random.integer(2, 5) * 2 - 1 
 
     let body: RigidBody
@@ -66,8 +84,12 @@ ENGINE.on('tick', (delta) => {
     for (let i = 0; i < iterations; i++)
         WORLD.step(delta / iterations * timescale)
 
-    fps = FMath.average(...ENGINE.deltaHistory)
+    let total = 0
 
+    for (let dt of ENGINE.deltaHistory) total += dt
+
+    fps = ENGINE.deltaHistory.length / total
+    
     RENDERER.update()
 })
 RENDERER.on('render', (graphics) => {
@@ -81,8 +103,8 @@ RENDERER.on('render', (graphics) => {
 
         graphics.drawCircleFill(transform.position.x, transform.position.y, .1, DefaultColors.Red)
 
-        if (collider instanceof Colliders.CircleCollider) graphics.drawCircleLine(transform.position.x, transform.position.y, collider.radius, 2, DefaultColors.White)
-        else if (collider instanceof Colliders.PolygonCollider) graphics.drawPolyLine(collider.getTransformedVertices(transform), 2, DefaultColors.White)
+        if (collider instanceof CircleCollider) graphics.drawCircleLine(transform.position.x, transform.position.y, collider.radius, 2, DefaultColors.White)
+        else if (collider instanceof PolygonCollider) graphics.drawPolyLine(collider.getTransformedVertices(transform), 2, DefaultColors.White)
     }
 
     graphics.drawText(`Fps: ${Math.round(fps)}`, min.x + 1, min.y + 3, '50px sans-serif', DefaultColors.White)

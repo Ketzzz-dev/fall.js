@@ -1,21 +1,17 @@
 {
     "compilerOptions": {
+        "lib": ["DOM"],
+        "target": "ESNext",
         "module": "CommonJS",
-        "target": "ES5",
-        "moduleResolution": "NodeNext",
+        "moduleResolution": "Node",
         "outDir": "./dist",
-        "isolatedModules": true,
-        "declaration": true,
-        "noEmit": true,
         "strict": true,
         "skipLibCheck": true,
         "allowSyntheticDefaultImports": true,
-        "forceConsistentCasingInFileNames": true,
-        "resolveJsonModule": true,
-        "useDefineForClassFields": true,
+        "allowUnreachableCode": false,
+        "allowUnusedLabels": false,
         "noImplicitOverride": true,
         "noImplicitReturns": true
     },
-    "include": ["src", "types"],
-    "exclude": ["node_modules"]
+    "include": ["./src/**/*", "./types/**/*"]
 }

@@ -1,12 +1,42 @@
 import { Vector } from '../Vector'
 import { Transform } from '../Transform'
-import { Colliders } from './Colliders'
+import { CircleCollider, PolygonCollider } from './Colliders'
 import { FMath } from '../../utility/FMath'
 import { CollisionPoints } from './CollisionManifold'
-import { Pair } from '../../index'
+import { Pair } from '../../utility/Pair'
+import { AABB } from '../../geometry/AABB'
+import { RigidBody } from '../RigidBody'
 
 export namespace Collisions {
     export type Projection = [min: number, max: number]
+
+    export function collides(a: RigidBody, b: RigidBody): CollisionPoints | undefined {
+        let { collider: colliderA, transform: transformA } = a
+        let { collider: colliderB, transform: transformB } = b
+
+        if (!AABB.overlaps(colliderA.getBounds(transformA), colliderB.getBounds(transformB)))
+            return
+
+        if (colliderA instanceof CircleCollider) {
+            if (colliderB instanceof CircleCollider) {
+                return Collisions.findCircleCollisionPoints(colliderA, transformA, colliderB, transformB)
+            } else if (colliderB instanceof PolygonCollider) {
+                return Collisions.findCirclePolygonCollisionPoints(colliderA, transformA, colliderB, transformB)
+            }
+        } else if (colliderA instanceof PolygonCollider) {
+            if (colliderB instanceof CircleCollider) {
+                let points = Collisions.findCirclePolygonCollisionPoints(colliderB, transformB, colliderA, transformA)
+
+                if (points) points.normal = points.normal.negative
+
+                return points
+            } else if (colliderB instanceof PolygonCollider) {
+                return Collisions.findPolygonCollisionPoints(colliderA, transformA, colliderB, transformB)
+            }
+        }
+
+        return
+    }
 
     export function projectPolygon(vertices: Vector[], axis: Vector): Projection {
         let min = Number.POSITIVE_INFINITY
@@ -65,8 +95,8 @@ export namespace Collisions {
     }
 
     export function findCircleCollisionPoints(
-        colliderA: Colliders.CircleCollider, transformA: Transform,
-        colliderB: Colliders.CircleCollider, transformB: Transform
+        colliderA: CircleCollider, transformA: Transform,
+        colliderB: CircleCollider, transformB: Transform
     ): CollisionPoints | undefined {
         let delta = Vector.subtract(transformB.position, transformA.position)
         let totalRadius = colliderA.radius + colliderB.radius
@@ -85,8 +115,8 @@ export namespace Collisions {
         }
     }
     export function findPolygonCollisionPoints(
-        colliderA: Colliders.PolygonCollider, transformA: Transform,
-        colliderB: Colliders.PolygonCollider, transformB: Transform
+        colliderA: PolygonCollider, transformA: Transform,
+        colliderB: PolygonCollider, transformB: Transform
     ): CollisionPoints | undefined {
         let verticesA = colliderA.getTransformedVertices(transformA)
         let verticesB = colliderB.getTransformedVertices(transformB)
@@ -154,8 +184,8 @@ export namespace Collisions {
         }
     }
     export function findCirclePolygonCollisionPoints(
-        circleCollider: Colliders.CircleCollider, circleTransform: Transform,
-        polygonCollider: Colliders.PolygonCollider, polygonTransform: Transform
+        circleCollider: CircleCollider, circleTransform: Transform,
+        polygonCollider: PolygonCollider, polygonTransform: Transform
     ): CollisionPoints | undefined {
         let polygonVertices = polygonCollider.getTransformedVertices(polygonTransform)
 

@@ -1,122 +1,54 @@
 import { Vector } from '../physics/Vector'
 
-/**
- * A collection of constants and methods to perform mathematical computing.
- */
 export namespace FMath {
-    /**
-     * A constant for PI / 2.
-     */
-    export const PI_OVER_TWO = Math.PI / 2
-    /**
-     * A constant for 2(PI).
-     */
     export const TWO_PI = 2 * Math.PI
+    export const PI_OVER_TWO = Math.PI / 2
 
-    // vector math
-    /**
-     * Returns the distance between 2 vectors, sqaured.
-     * 
-     * @param a The source vector. 
-     * @param b The destination Vector.
-     */
     export function distanceSq(a: Vector, b: Vector): number {
         let deltaX = a.x - b.x
         let deltaY = a.y - b.y
     
         return deltaX * deltaX + deltaY * deltaY
     }
-    /**
-     * Returns the distance between 2 vectors.
-     * 
-     * @param a The source vector. 
-     * @param b The destination Vector.
-     */
     export function distance(a: Vector, b: Vector): number {
         let deltaX = a.x - b.x
         let deltaY = a.y - b.y
     
         return Math.sqrt(deltaX * deltaX + deltaY * deltaY)
     }
-    /**
-     * Returns the dot product of 2 vectors.
-     * 
-     * @param a Left hand side vector.
-     * @param b Right hand side vector.
-     */
     export function dot(a: Vector, b: Vector): number {
         return a.x * b.x + a.y * b.y
     }
-    /**
-     * Returns the cross product of 2 vectors.
-     * 
-     * @param a Left hand side vector.
-     * @param b Right hand side vector.
-     */
     export function cross(a: Vector, b: Vector): number {
         return a.x * b.y - a.y * b.x
     }
-    /**
-     * Returns a vector, rotated by `angle` degrees.
-     * 
-     * @param v The vector to rotate.
-     * @param x The angle, in radians.
-     * @param origin The origin point of the vector.
-     */
-    export function rotate(v: Vector, x: number, origin = Vector.ZERO): Vector {
-        let sin = Math.sin(x)
-        let cos = Math.cos(x)
+    export function rotate(v: Vector, angle: number, origin = Vector.ZERO): Vector {
+        let sin = Math.sin(angle)
+        let cos = Math.cos(angle)
 
         let deltaX = v.x - origin.x
         let deltaY = v.y - origin.y
 
+        let rotatedX = cos * deltaX - sin * deltaY
+        let rotatedY = sin * deltaX + cos * deltaY
+
         return new Vector(
-            cos * deltaX - sin * deltaY,
-            sin * deltaX + cos * deltaY
+            rotatedX + origin.x,
+            rotatedY + origin.y
         )
     }
-
-    // numerical math
-    /**
-     * Returns the clamped value within the range of `min` and `max`.
-     * 
-     * @param x The value to clamp.
-     * @param min The minimum range, 0 if undefined.
-     * @param max The maximum range, 1 if undefined.
-     */
     export function clamp(x: number, min = 0, max = 1): number {
-        if (min == max)
-            return min
-        if (min > max)
-            throw new RangeError('`min` is greater than `max`.')
+        if (min == max) return min
+        if (min > max) throw new RangeError('Argument \'min\' is greater than the argument \'max\'.')
 
         return x <= min ? min : x >= max ? max : x
     }
-    /**
-     * Returns a boolean value that determines whether `x` is within the range of `min` and `max`.
-     * 
-     * @param x The value to test.
-     * @param min The minimum range, 0 if undefined.
-     * @param max The maximum range, 1 if undefined.
-     */
-    export function within(x: number, min = 0, max = 1): boolean {
-        if (min == max)
-            return x == min
-        if (min > max)
-            throw new RangeError('`min` is greater than `max`.')
-
-        return x >= min && x <= max
-    }
-
-    export function average(...numbers: number[]): number {
-        let total = 0
-
-        for (let number of numbers) total += number
-
-        return numbers.length / total
-    }
-
-    export function fuzzyEquals(a: number, b: number, epsilon = Number.EPSILON): boolean {
-        return Math.abs(a - b) >= epsilon
+    export function fuzzyEquals(a: number, b: number, epsilon?: number): boolean
+    export function fuzzyEquals(a: Vector, b: Vector, epsilon?: number): boolean
+    export function fuzzyEquals(a: Vector | number, b: Vector | number, epsilon = Number.EPSILON): boolean {
+        if (typeof a == 'number' && typeof b == 'number') return Math.abs(a - b) < epsilon
+        else if (typeof a == 'object' && typeof b == 'object') return Math.abs(a.x - b.x) < epsilon && Math.abs(a.y - b.y) < epsilon
+        
+        throw new TypeError('Arguments \'a\' and \'b\' must be of type \'number\' or \'Vector\'.')
     }
 }

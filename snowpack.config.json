@@ -1,6 +1,6 @@
 {
     "mount": {
-        "public": { "url": "/", "static": true },
+        "public": { "url": "/", "static": true, "resolve": false },
         "src": { "url": "/dist" }
     },
     "plugins": [
