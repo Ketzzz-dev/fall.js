@@ -25,7 +25,7 @@ export namespace Shapes {
         radius: number
     }
 
-    export function circle(options: Shapes.CircleOptions): RigidBody {
+    export function circle(options: CircleOptions): RigidBody {
         let { radius, density, position, rotation, isStatic, restitution } = options
 
         let area = radius * radius * Math.PI
@@ -37,7 +37,7 @@ export namespace Shapes {
             collider: new CircleCollider(radius)
         })
     }
-    export function rectangle(options: Shapes.RectangleOptions): RigidBody {
+    export function rectangle(options: RectangleOptions): RigidBody {
         let { width, height, density, position, rotation, isStatic, restitution } = options
         
         let left = .5 * -width
@@ -61,7 +61,7 @@ export namespace Shapes {
             collider: new PolygonCollider(vertices)
         })
     }
-    export function polygon(options: Shapes.PolygonOptions): RigidBody {
+    export function polygon(options: PolygonOptions): RigidBody {
         let { sides, radius, position, rotation, density, isStatic, restitution } = options
 
         let theta = FMath.TWO_PI / sides

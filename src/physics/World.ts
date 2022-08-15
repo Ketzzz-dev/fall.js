@@ -36,7 +36,7 @@ export class World {
     }
 
     public resolveCollision(collision: CollisionManifold): void {
-        let { bodies: { a, b }, points: { normal, depth } } = collision
+        let { bodies: { a, b }, points: { normal, depth, contacts } } = collision
 
         let totalMass = a.inverseMass + b.inverseMass
         let penetration = Vector.multiply(normal, depth)

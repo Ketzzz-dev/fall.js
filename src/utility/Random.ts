@@ -2,20 +2,14 @@ import { FMath } from './FMath'
 
 export namespace Random {
     export function float(min = 0, max = 0): number {
-        // ensuring that our range is valid.
-        if (min == max)
-            return min
-        if (min > max)
-            throw new RangeError('`min` is greater than `max`.')
+        if (min == max) return min
+        if (min > max) throw new RangeError('Argument \'min\' is greater than the argument \'max\'.')
 
         return min + Math.random() * (max - min)
     }
     export function integer(min = 0, max = 0): number {
-        // ensuring that our range is valid.
-        if (min == max)
-            return min
-        if (min > max)
-            throw new RangeError('`min` is greater than `max`.')
+        if (min == max) return min
+        if (min > max) throw new RangeError('Argument \'min\' is greater than the argument \'max\'.')
 
         return Math.floor(min + Math.random() * (max - min + 1))
     }
@@ -31,5 +25,3 @@ export namespace Random {
         return array[index]
     }
 }
-
-Object.values
