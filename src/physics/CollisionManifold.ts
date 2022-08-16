@@ -1,6 +1,6 @@
-import { Vector } from '../Vector'
-import { RigidBody } from '../RigidBody'
-import { Pair } from '../../utility/Pair'
+import { Pair } from '../utility/Pair'
+import { RigidBody } from './RigidBody'
+import { Vector } from './Vector'
 
 export interface CollisionPoints {
     contacts: Pair<Vector>

@@ -1,7 +1,7 @@
 import EventEmitter from 'eventemitter3'
 import { Camera } from '../display/Camera'
 import { Graphics } from '../display/Graphics'
-import { FMath } from '../utility/FMath'
+import { MathF } from '../utility/MathF'
 
 export interface RendererEvents {
     'render': [graphics: Graphics]
@@ -23,8 +23,8 @@ export class Renderer extends EventEmitter<RendererEvents> {
         this.graphics = new Graphics(this)
         this.camera = new Camera(this)
 
-        width = FMath.clamp(width, Renderer.MIN_DIMENSION, Renderer.MAX_DIMENSION)
-        height = FMath.clamp(height, Renderer.MIN_DIMENSION, Renderer.MAX_DIMENSION)
+        width = MathF.clamp(width, Renderer.MIN_DIMENSION, Renderer.MAX_DIMENSION)
+        height = MathF.clamp(height, Renderer.MIN_DIMENSION, Renderer.MAX_DIMENSION)
 
         this.canvas.width = width
         this.canvas.height = height

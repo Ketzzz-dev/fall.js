@@ -11,7 +11,11 @@
         "allowUnreachableCode": false,
         "allowUnusedLabels": false,
         "noImplicitOverride": true,
-        "noImplicitReturns": true
+        "noImplicitReturns": true,
+        "noPropertyAccessFromIndexSignature": true,
+        "forceConsistentCasingInFileNames": true,
+        "isolatedModules": true,
+        "experimentalDecorators": true
     },
     "include": ["./src/**/*"]
 }

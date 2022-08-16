@@ -1,4 +1,4 @@
-import { FMath } from './FMath'
+import { MathF } from './MathF'
 
 export namespace Random {
     export function float(min = 0, max = 0): number {
@@ -14,7 +14,7 @@ export namespace Random {
         return Math.floor(min + Math.random() * (max - min + 1))
     }
     export function boolean(probability = 0.5): boolean {
-        probability = FMath.clamp(probability)
+        probability = MathF.clamp(probability)
 
         return Math.random() <= probability
     }

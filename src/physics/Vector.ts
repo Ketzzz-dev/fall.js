@@ -12,16 +12,16 @@ export class Vector {
     public static subtract(a: Vector, b: Vector): Vector {
         return new Vector(a.x - b.x, a.y - b.y)
     }
-    public static multiply(a: Vector, b: number): Vector
-    public static multiply(a: number, b: Vector): Vector
+    public static multiply(scalar: number, vector: Vector): Vector
+    public static multiply(vector: Vector, scalar: number): Vector
     public static multiply(a: Vector | number, b: Vector | number): Vector {
         if (typeof a == 'number' && typeof b == 'object') return new Vector(a * b.x, a * b.y)
         else if (typeof a == 'object' && typeof b == 'number') return new Vector(a.x * b, a.y * b)
         
         throw new TypeError('Argument \'a\' must be of type \'Vector\' while Argument \'b\' must be of type \'number\', or vice versa.')
     }
-    public static divide(a: Vector, b: number): Vector
-    public static divide(a: number, b: Vector): Vector
+    public static divide(scalar: number, vector: Vector): Vector
+    public static divide(vector: Vector, scalar: number): Vector
     public static divide(a: Vector | number, b: Vector | number): Vector {
         if (typeof a == 'number' && typeof b == 'object') return new Vector(a / b.x, a / b.y)
         else if (typeof a == 'object' && typeof b == 'number') return new Vector(a.x / b, a.y / b)
@@ -39,11 +39,11 @@ export class Vector {
         return new Vector(-this.x, -this.y)
     }
 
-    public get magnitudeSq(): number {
-        return this.x * this.x + this.y * this.y
-    }
     public get magnitude(): number {
         return Math.sqrt(this.x * this.x + this.y * this.y)
+    }
+    public get magnitudeSq(): number {  
+        return this.x * this.x + this.y * this.y
     }
     public get normalized(): Vector {
         let { magnitude } = this

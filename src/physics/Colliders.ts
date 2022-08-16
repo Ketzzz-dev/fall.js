@@ -1,16 +1,16 @@
-import { AABB } from '../../geometry/AABB'
-import { FMath } from '../../utility/FMath'
-import { Transform } from '../Transform'
-import { Vector } from '../Vector'
+import { AABB } from '../geometry/AABB'
+import { MathF } from '../utility/MathF'
+import { Transform } from './Transform'
+import { Vector } from './Vector'
 
 export abstract class Collider {
-
+    
     public abstract getBounds(parentTransform: Transform): AABB
 }
 
 export class CircleCollider extends Collider {
     public readonly radius: number
-
+    
     public constructor (radius: number) {
         super()
 
@@ -29,7 +29,7 @@ export class CircleCollider extends Collider {
 export class PolygonCollider extends Collider {
     public static readonly MIN_VERTICES = 3
     public static readonly MAX_VERTICES = 25
-
+    
     private _localVertices: Vector[]
 
     public constructor (vertices: Vector[]) {
@@ -42,7 +42,7 @@ export class PolygonCollider extends Collider {
         let { position, rotation } = parentTransform
 
         return this._localVertices.map(v => Vector.add(
-            FMath.rotate(v, rotation),
+            MathF.rotate(v, rotation),
             position
         ))
     }

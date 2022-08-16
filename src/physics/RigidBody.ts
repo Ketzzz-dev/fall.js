@@ -1,7 +1,7 @@
-import { FMath } from '../utility/FMath'
+import { MathF } from '../utility/MathF'
 import { Vector } from './Vector'
-import { Collider } from './collisions/Colliders'
 import { Transform } from './Transform'
+import { Collider } from './Colliders'
 
 export interface RigidBodyOptions {
     position: Vector
@@ -21,7 +21,7 @@ export class RigidBody {
     public linearVelocity = Vector.ZERO
     public force = Vector.ZERO
     public angularVelocity = 0
-    public torque = 0
+    public torque = 0   
 
     public readonly density: number
     public readonly area: number
@@ -47,18 +47,19 @@ export class RigidBody {
 
         this.isStatic = isStatic ?? false
 
-        this.mass = mass
-        this.inertia = inertia
-
         if (this.isStatic) {
+            this.mass = Infinity
             this.inverseMass = 0
+            this.inertia = Infinity
             this.inverseInertia = 0
         } else {
-            this.inverseMass = 1 / mass
-            this.inverseInertia = 1 / inertia
+            this.mass = mass
+            this.inverseMass = 1 / this.mass
+            this.inertia = inertia
+            this.inverseInertia = 1 / this.inertia
         }
 
-        this.restitution = FMath.clamp(restitution)
+        this.restitution = MathF.clamp(restitution)
 
     }
 
@@ -66,7 +67,6 @@ export class RigidBody {
         if (this.isStatic)
             return
 
-        // velocity integration
         this.force = Vector.add(this.force, Vector.multiply(this.mass, gravity))
 
         let linearAcceleration = Vector.multiply(this.force, this.inverseMass)
@@ -75,7 +75,6 @@ export class RigidBody {
         this.linearVelocity = Vector.add(this.linearVelocity, Vector.multiply(linearAcceleration, delta))
         this.angularVelocity += angularAcceleration * delta
 
-        // position integration
         this.transform.position = Vector.add(this.transform.position, Vector.multiply(this.linearVelocity, delta))
         this.transform.rotation += this.angularVelocity * delta
         

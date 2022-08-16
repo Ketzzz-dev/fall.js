@@ -1,12 +1,12 @@
 import { Engine } from './core/Engine'
 import { Renderer } from './core/Renderer'
 import { AABB } from './geometry/AABB'
-import { CircleCollider, PolygonCollider } from './physics/collisions/Colliders'
+import { CircleCollider, PolygonCollider } from './physics/Colliders'
 import { RigidBody } from './physics/RigidBody'
 import { Shapes } from './physics/Shapes'
 import { Vector } from './physics/Vector'
 import { World } from './physics/World'
-import { FMath } from './utility/FMath'
+import { MathF } from './utility/MathF'
 import { Random } from './utility/Random'
 
 const ENGINE = new Engine
@@ -37,7 +37,7 @@ let ground = Shapes.rectangle({
 WORLD.addBody(ground)
 
 let platformA = Shapes.rectangle({
-    position: new Vector(min.x + padding.x * 3, min.y + padding.y * 5.5), rotation: .175 * FMath.PI_OVER_TWO,
+    position: new Vector(min.x + padding.x * 3, min.y + padding.y * 5.5), rotation: .175 * MathF.PI_OVER_TWO,
     width: .37 * ((max.x - min.x) - padding.x), height: 2,
     density: 3, restitution: 0.2, isStatic: true
 })
@@ -45,7 +45,7 @@ let platformA = Shapes.rectangle({
 WORLD.addBody(platformA)
 
 let platformB = Shapes.rectangle({
-    position: new Vector(max.x - padding.x * 3, min.y + padding.y * 4), rotation: -.175 * FMath.PI_OVER_TWO,
+    position: new Vector(max.x - padding.x * 3, min.y + padding.y * 4), rotation: -.175 * MathF.PI_OVER_TWO,
     width: .37 * ((max.x - min.x) - padding.x), height: 2,
     density: 3, restitution: 0.2, isStatic: true
 })
@@ -57,13 +57,13 @@ for (let i = 0; i < 20; i++) {
 
     let x = Random.float(min.x + padding.x, max.x)
     let y = Random.float(min.y, max.y) - 20
-    let rotation = Random.float(0, FMath.TWO_PI)
+    let rotation = Random.float(0, MathF.TWO_PI)
     let radius = Random.float(1, 1.7)
     let sides = Random.integer(2, 5) * 2 - 1 
 
     let body: RigidBody
 
-    if (Random.boolean(.75)) body = Shapes.polygon({
+    if (Random.boolean()) body = Shapes.polygon({
         position: new Vector(x, y), rotation, radius, sides,
         density: 2.5, restitution: 0.3
     })
@@ -98,42 +98,22 @@ RENDERER.on('render', (graphics) => {
     for (let body of bodies) {
         let { transform, collider } = body
 
-        if (!AABB.overlaps(collider.getBounds(transform), RENDERER.camera.bounds))
-            continue
+        let bounds = collider.getBounds(transform)
 
-        graphics.drawCircleFill(transform.position.x, transform.position.y, .1, DefaultColors.Red)
+        if (!AABB.overlaps(bounds, RENDERER.camera.bounds))
+            continue
 
         if (collider instanceof CircleCollider) graphics.drawCircleLine(transform.position.x, transform.position.y, collider.radius, 2, DefaultColors.White)
         else if (collider instanceof PolygonCollider) graphics.drawPolyLine(collider.getTransformedVertices(transform), 2, DefaultColors.White)
+        
+        graphics.drawCircleFill(transform.position.x, transform.position.y, .1, DefaultColors.Red)
+
+        let d = MathF.rotate(Vector.add(transform.position, Vector.RIGHT), transform.rotation, transform.position)
+
+        graphics.drawLine(transform.position.x, transform.position.y, d.x, d.y, 2, DefaultColors.Red)
     }
 
     graphics.drawText(`Fps: ${Math.round(fps)}`, min.x + 1, min.y + 3, '50px sans-serif', DefaultColors.White)
 })
 
 onload = () => ENGINE.start()
-
-// core modules
-export * from './core/Engine'
-export * from './core/Renderer'
-
-// display modules
-export * from './display/Camera'
-export * from './display/Graphics'
-
-// geometry modules
-export * from './geometry/AABB'
-
-// physics modules
-export * from './physics/RigidBody'
-export * from './physics/Shapes'
-export * from './physics/Transform'
-export * from './physics/Vector'
-export * from './physics/World'
-
-export * from './physics/collisions/Colliders'
-export * from './physics/collisions/CollisionManifold'
-
-// utility modules
-export * from './utility/FMath'
-export * from './utility/Pair'
-export * from './utility/Random'

@@ -1,5 +1,5 @@
 import EventEmitter from 'eventemitter3'
-import { FMath } from '../utility/FMath'
+import { MathF } from '../utility/MathF'
 
 export interface EngineEvents {
     'tick': [delta: number]
@@ -11,7 +11,7 @@ export class Engine extends EventEmitter<EngineEvents> {
     public static readonly MIN_DELTA = 1 / 120
     public static readonly MAX_DELTA = 1 / 12
 
-    public static readonly MAX_DELTA_HISTORY_LENGTH = 100
+    public static readonly MAX_DELTA_HISTORY_LENGTH = 60
 
     private lastTime = 0
     private frameRequestId = 0
@@ -50,7 +50,7 @@ export class Engine extends EventEmitter<EngineEvents> {
         this.deltaHistory = this.deltaHistory.slice(-Engine.MAX_DELTA_HISTORY_LENGTH)
         delta = Math.min(...this.deltaHistory)
 
-        delta = FMath.clamp(delta, Engine.MIN_DELTA, Engine.MAX_DELTA)
+        delta = MathF.clamp(delta, Engine.MIN_DELTA, Engine.MAX_DELTA)
 
         this.delta = delta
 

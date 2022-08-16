@@ -1,52 +1,10 @@
 
 declare namespace FallJS {
     // physics
-    class Vector {
-        public static readonly ZERO: Vector
-        public static readonly ONE: Vector
-        public static readonly LEFT: Vector
-        public static readonly RIGHT: Vector
-        public static readonly UP: Vector
-        public static readonly DOWN: Vector
-    
-        public static add(a: Vector, b: Vector): Vector
-
-        public static subtract(a: Vector, b: Vector): Vector
-
-        public static multiply(a: Vector, b: number): Vector
-        public static multiply(a: number, b: Vector): Vector
-        
-        public static divide(a: Vector, b: number): Vector
-        public static divide(a: number, b: Vector): Vector
-        
-        public static equals(a: Vector, b: Vector): boolean
-    
-        public readonly x: number
-        public readonly y: number
-    
-        public get negative(): Vector
-    
-        public get magnitudeSq(): number
-        public get magnitude(): number
-
-        public get normalized(): Vector
-        
-        public constructor (x: number, y: number)
-    
-        public toString(): string
-    }
-    class Transform {
-        public position: Vector
-        public rotation: number
-    
-        public constructor (position: Vector, rotation?: number)
-    }
-
-    // physics/collisions
     namespace Collisions {
         type Projection = [min: number, max: number]
 
-        function collides(a: RigidBody, b: RigidBody): CollisionPoints | undefined
+        function collides(bodyA: RigidBody, bodyB: RigidBody): CollisionPoints | undefined
 
         function projectPolygon(vertices: Vector[], axis: Vector): Projection
         function projectCircle(center: Vector, radius: number, axis: Vector): Projection
@@ -83,6 +41,41 @@ declare namespace FallJS {
         export function rectangle(options: RectangleOptions): RigidBody
         export function polygon(options: PolygonOptions): RigidBody
     }
+    
+    class Vector {
+        public static readonly ZERO: Vector
+        public static readonly ONE: Vector
+        public static readonly LEFT: Vector
+        public static readonly RIGHT: Vector
+        public static readonly UP: Vector
+        public static readonly DOWN: Vector
+    
+        public static add(a: Vector, b: Vector): Vector
+
+        public static subtract(a: Vector, b: Vector): Vector
+
+        public static multiply(vector: Vector, scalar: number): Vector
+        public static multiply(scalar: number, vector: Vector): Vector
+        
+        public static divide(a: Vector, b: number): Vector
+        public static divide(a: number, b: Vector): Vector
+        
+        public static equals(a: Vector, b: Vector): boolean
+    
+        public readonly x: number
+        public readonly y: number
+    
+        public get negative(): Vector
+    
+        public get magnitude(): number
+        public get magnitudeSq(): number
+
+        public get normalized(): Vector
+        
+        public constructor (x: number, y: number)
+    
+        public toString(): string
+    }
 
     abstract class Collider {
 
@@ -108,6 +101,27 @@ declare namespace FallJS {
     
         public getBounds(parentTransform: Transform): AABB
     }
+    
+    class Transform {
+        public position: Vector
+        public rotation: number
+    
+        public constructor (position: Vector, rotation?: number)
+    }
+    
+    interface CollisionPoints {
+        contacts: Pair<Vector>
+        
+        normal: Vector
+        depth: number
+    }
+    
+    class CollisionManifold {
+        public readonly bodies: Pair<RigidBody>
+        public readonly points: CollisionPoints
+        
+        public constructor (bodyA: RigidBody, bodyB: RigidBody, points: CollisionPoints)
+    }
 
     interface RigidBodyOptions {
         position: Vector
@@ -119,20 +133,6 @@ declare namespace FallJS {
         inertia: number
         restitution: number
         isStatic?: boolean
-    }
-    
-    interface CollisionPoints {
-        contacts: Pair<Vector>
-        
-        normal: Vector
-        depth: number
-    }
-
-    class CollisionManifold {
-        public readonly bodies: Pair<RigidBody>
-        public readonly points: CollisionPoints
-        
-        public constructor (a: RigidBody, b: RigidBody, points: CollisionPoints)
     }
 
     class RigidBody {
@@ -178,25 +178,28 @@ declare namespace FallJS {
         public readonly min: Vector
         public readonly max: Vector
     
-        public static overlaps(a: AABB, b: AABB): boolean
+        public static overlaps(boundsA: AABB, boundsB: AABB): boolean
     
         public constructor (min: Vector, max: Vector)
     }
 
     // utility
-    namespace FMath {
+    namespace MathF {
         const TWO_PI: number
         const PI_OVER_TWO: number
     
-        function distanceSq(a: Vector, b: Vector): number
         function distance(a: Vector, b: Vector): number
+        function distanceSq(a: Vector, b: Vector): number
 
         function dot(a: Vector, b: Vector): number
+
+        function cross(vector: Vector, scalar: number): Vector
+        function cross(scalar: number, vector: Vector): Vector
         function cross(a: Vector, b: Vector): number
 
-        function rotate(v: Vector, angle: number, origin?: Vector): Vector
+        function rotate(vector: Vector, angle: number, origin?: Vector): Vector
 
-        function clamp(x: number, min?: number, max?: number): number
+        function clamp(value: number, min?: number, max?: number): number
 
         function fuzzyEquals(a: number, b: number, epsilon?: number): boolean
         function fuzzyEquals(a: Vector, b: Vector, epsilon?: number): boolean
