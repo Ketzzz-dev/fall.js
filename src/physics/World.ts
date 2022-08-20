@@ -6,7 +6,9 @@ import { Collisions } from './Collisions'
 
 export class World {
     private _bodies = [] as RigidBody[]
-    private _gravity = new Vector(0, 9.81)
+    private _gravity = new Vector(0, 0)
+
+    public points = [] as Vector[]
     
     public addBody(body: RigidBody): void {
         this._bodies.push(body)
@@ -32,11 +34,14 @@ export class World {
                 if (points) collisions.push(new CollisionManifold(a, b, points))
             }
         }
-        for (let collision of collisions) this.resolveCollision(collision)
+
+        this.points = []
+
+        for (let collision of collisions) this.resolveCollision(collision), !this.points.includes(collision.points.contact) && this.points.push(collision.points.contact)
     }
 
     public resolveCollision(collision: CollisionManifold): void {
-        let { bodies: { a, b }, points: { normal, depth, contacts } } = collision
+        let { bodies: { a, b }, points: { normal, depth, contact } } = collision
 
         let transformA = a.transform
         let transformB = b.transform
@@ -47,49 +52,47 @@ export class World {
         if (!a.isStatic) transformA.position = Vector.subtract(a.transform.position, Vector.multiply(penetration, a.inverseMass / totalMass))
         if (!b.isStatic) transformB.position = Vector.add(b.transform.position, Vector.multiply(penetration, b.inverseMass / totalMass))
 
-        // let contactPoint = Vector.subtract(contacts.a, contacts.b)
+        let ra = Vector.subtract(contact, transformA.position)
+        let rb = Vector.subtract(contact, transformB.position)
 
-        // let relativeA = Vector.subtract(contactPoint, transformA.position)
-        // let relativeB = Vector.subtract(contactPoint, transformB.position)
+        let rv = Vector.subtract(
+            Vector.add(b.linearVelocity, MathF.cross(b.angularVelocity, rb)),
+            Vector.subtract(a.linearVelocity, MathF.cross(a.angularVelocity, ra))
+        )
 
-        // let fullVelocityA = Vector.add(a.linearVelocity, MathF.cross(a.angularVelocity, relativeA))
-        // let fullVelocityB = Vector.add(b.linearVelocity, MathF.cross(b.angularVelocity, relativeB))
-        
-        // let relativeVelocity = Vector.subtract(fullVelocityB, fullVelocityA)
+        let contactVelocity = MathF.dot(rv, normal)
 
-        // let impulseForce = MathF.dot(relativeVelocity, normal)
+        if (contactVelocity > 0) return
 
-        // if (impulseForce > 0) return
+        let raxN = MathF.cross(ra, normal)
+        let rbxN = MathF.cross(rb, normal)
 
-        // let inertiaA = MathF.cross(a.inverseInertia * MathF.cross(relativeA, normal), relativeA)
-        // let inertiaB = MathF.cross(b.inverseInertia * MathF.cross(relativeB, normal), relativeB)
+        let invMassSum = totalMass + (raxN * raxN) * a.inverseInertia + (rbxN * rbxN) * b.inverseInertia
 
-        // let angularEffect = MathF.dot(Vector.add(inertiaA, inertiaB), normal)
-
-        // let restitution = .5 * (a.restitution + b.restitution)
-
-        // let j = (-(1 + restitution) * impulseForce) / (totalMass + angularEffect)
-
-        // let impulse = Vector.multiply(normal, j)
-
-        // if (!a.isStatic) {
-        //     a.linearVelocity = Vector.subtract(a.linearVelocity, Vector.multiply(impulse, a.inverseMass))
-        //     a.angularVelocity -= MathF.cross(contactPoint, impulse) * a.inverseInertia
-        // }
-        // if (!b.isStatic) {
-        //     b.linearVelocity = Vector.add(b.linearVelocity, Vector.multiply(impulse, b.inverseMass))
-        //     b.angularVelocity += MathF.cross(contactPoint, impulse) * b.inverseInertia
-        // }
-
-        let relativeVelocity = Vector.subtract(b.linearVelocity, a.linearVelocity)
-        
         let restitution = .5 * (a.restitution + b.restitution)
 
-        let j = (-(1 + restitution) * MathF.dot(relativeVelocity, normal)) / totalMass
+        let j = (-(1 + restitution) * contactVelocity) / invMassSum
 
         let impulse = Vector.multiply(normal, j)
 
-        if (!a.isStatic) a.linearVelocity = Vector.subtract(a.linearVelocity, Vector.multiply(impulse, a.inverseMass))
-        if (!b.isStatic) b.linearVelocity = Vector.add(b.linearVelocity, Vector.multiply(impulse, b.inverseMass))
+        if (!a.isStatic) {
+            a.linearVelocity = Vector.subtract(a.linearVelocity, Vector.multiply(a.inverseMass, impulse))
+            a.angularVelocity -= a.inverseInertia * MathF.cross(ra, impulse)
+        }
+        if (!b.isStatic) {
+            b.linearVelocity = Vector.add(b.linearVelocity, Vector.multiply(b.inverseMass, impulse))
+            b.angularVelocity += b.inverseInertia * MathF.cross(rb, impulse)
+        }
+
+        // let relativeVelocity = Vector.subtract(b.linearVelocity, a.linearVelocity)
+        
+        // let restitution = .5 * (a.restitution + b.restitution)
+
+        // let j = (-(1 + restitution) * MathF.dot(relativeVelocity, normal)) / totalMass
+
+        // let impulse = Vector.multiply(normal, j)
+
+        // if (!a.isStatic) a.linearVelocity = Vector.subtract(a.linearVelocity, Vector.multiply(impulse, a.inverseMass))
+        // if (!b.isStatic) b.linearVelocity = Vector.add(b.linearVelocity, Vector.multiply(impulse, b.inverseMass))
     }
 }

@@ -105,12 +105,9 @@ export namespace Collisions {
         if (distance > totalRadius) return
 
         let normal = delta.normalized
-        
-        let pointA = Vector.add(transformA.position, Vector.multiply(normal, colliderA.radius))
-        let pointB = Vector.subtract(transformB.position, Vector.multiply(normal, colliderB.radius))
 
         return {
-            contacts: new Pair(pointA, pointB),
+            contact: Vector.add(transformA.position, Vector.multiply(normal, colliderA.radius)),
             normal, depth: totalRadius - distance
         }
     }
@@ -125,8 +122,7 @@ export namespace Collisions {
         let normal = Vector.ZERO
 
         let minDistanceSq = Number.POSITIVE_INFINITY
-        let pointA = Vector.ZERO
-        let pointB = Vector.ZERO
+        let contact = Vector.ZERO
 
         for (let i = 0; i < verticesA.length; i++) {
             let start = verticesA[i]
@@ -147,11 +143,8 @@ export namespace Collisions {
             let closestPoint = findClosestLineSegmentPoint(transformB.position, start, end)
             let distanceSq = MathF.distanceSq(transformB.position, closestPoint)
 
-            if (distanceSq < minDistanceSq) [minDistanceSq, pointA] = [distanceSq, closestPoint]
+            if (distanceSq < minDistanceSq) [minDistanceSq, contact] = [distanceSq, closestPoint]
         }
-
-        minDistanceSq = Number.POSITIVE_INFINITY
-        
         for (let i = 0; i < verticesB.length; i++) {
             let start = verticesB[i]
             let end = verticesB[(i + 1) % verticesB.length]
@@ -171,17 +164,14 @@ export namespace Collisions {
             let closestPoint = findClosestLineSegmentPoint(transformA.position, start, end)
             let distanceSq = MathF.distanceSq(transformA.position, closestPoint)
 
-            if (distanceSq < minDistanceSq) [minDistanceSq, pointB] = [distanceSq, closestPoint]
+            if (distanceSq < minDistanceSq) [minDistanceSq, contact] = [distanceSq, closestPoint]
         }
 
         let direction = Vector.subtract(transformB.position, transformA.position)
 
         if (MathF.dot(direction, normal) < 0) normal = normal.negative
 
-        return {
-            contacts: new Pair(pointA, pointB),
-            normal, depth
-        }
+        return { contact, normal, depth }
     }
     export function findCirclePolygonCollisionPoints(
         circleCollider: CircleCollider, circleTransform: Transform,
@@ -193,7 +183,7 @@ export namespace Collisions {
         let normal = Vector.ZERO
 
         let minDistanceSq = Number.POSITIVE_INFINITY
-        let pointA = Vector.ZERO
+        let contact = Vector.ZERO
 
         for (let i = 0; i < polygonVertices.length; i++) {
             let start = polygonVertices[i]
@@ -214,7 +204,7 @@ export namespace Collisions {
             let closestPoint = findClosestLineSegmentPoint(circleTransform.position, start, end)
             let distanceSq = MathF.distanceSq(circleTransform.position, closestPoint)
 
-            if (distanceSq < minDistanceSq) [minDistanceSq, pointA] = [distanceSq, closestPoint]
+            if (distanceSq < minDistanceSq) [minDistanceSq, contact] = [distanceSq, closestPoint]
         }
 
         let closestPoint = findClosestPolygonPoint(circleTransform.position, polygonVertices)
@@ -233,11 +223,7 @@ export namespace Collisions {
 
         if (MathF.dot(direction, normal) < 0) normal = normal.negative
 
-        let pointB = Vector.add(circleTransform.position, Vector.multiply(normal, circleCollider.radius))
 
-        return {
-            contacts: new Pair(pointA, pointB),
-            normal, depth
-        }
+        return { contact, normal, depth }
     }
 }

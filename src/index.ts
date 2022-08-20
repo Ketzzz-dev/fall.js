@@ -29,41 +29,39 @@ document.body.appendChild(RENDERER.canvas)
 let { min, max } = RENDERER.camera.bounds
 let padding = Vector.multiply(.1, Vector.subtract(max, min))
 
-let ground = Shapes.rectangle({
-    position: new Vector(0, max.y - padding.y), width: (max.x - min.x) - padding.x, height: 3,
-    density: 3, restitution: 0.2, isStatic: true
-})
+// let ground = Shapes.rectangle({
+//     position: new Vector(0, max.y - padding.y), width: (max.x - min.x) - padding.x, height: 3,
+//     density: 3, restitution: 0.2, isStatic: true
+// })
 
-WORLD.addBody(ground)
+// WORLD.addBody(ground)
 
-let platformA = Shapes.rectangle({
-    position: new Vector(min.x + padding.x * 3, min.y + padding.y * 5.5), rotation: .175 * MathF.PI_OVER_TWO,
-    width: .37 * ((max.x - min.x) - padding.x), height: 2,
-    density: 3, restitution: 0.2, isStatic: true
-})
+// let platformA = Shapes.rectangle({
+//     position: new Vector(min.x + padding.x * 3, min.y + padding.y * 5.5), rotation: .175 * MathF.PI_OVER_TWO,
+//     width: .37 * ((max.x - min.x) - padding.x), height: 2,
+//     density: 3, restitution: 0.2, isStatic: true
+// })
 
-WORLD.addBody(platformA)
+// WORLD.addBody(platformA)
 
-let platformB = Shapes.rectangle({
-    position: new Vector(max.x - padding.x * 3, min.y + padding.y * 4), rotation: -.175 * MathF.PI_OVER_TWO,
-    width: .37 * ((max.x - min.x) - padding.x), height: 2,
-    density: 3, restitution: 0.2, isStatic: true
-})
+// let platformB = Shapes.rectangle({
+//     position: new Vector(max.x - padding.x * 3, min.y + padding.y * 4), rotation: -.175 * MathF.PI_OVER_TWO,
+//     width: .37 * ((max.x - min.x) - padding.x), height: 2,
+//     density: 3, restitution: 0.2, isStatic: true
+// })
 
-WORLD.addBody(platformB)
+// WORLD.addBody(platformB)
 
 for (let i = 0; i < 20; i++) {
-    let { min, max } = platformB.collider.getBounds(platformB.transform)
-
-    let x = Random.float(min.x + padding.x, max.x)
-    let y = Random.float(min.y, max.y) - 20
+    let x = Random.float(0, max.x - padding.x)
+    let y = Random.float(min.y + padding.y, max.y - padding.y)
     let rotation = Random.float(0, MathF.TWO_PI)
-    let radius = Random.float(1, 1.7)
+    let radius = Random.float(1, 2.7)
     let sides = Random.integer(2, 5) * 2 - 1 
 
     let body: RigidBody
 
-    if (Random.boolean()) body = Shapes.polygon({
+    if (Random.boolean(1)) body = Shapes.polygon({
         position: new Vector(x, y), rotation, radius, sides,
         density: 2.5, restitution: 0.3
     })
@@ -74,6 +72,16 @@ for (let i = 0; i < 20; i++) {
 
     WORLD.addBody(body)
 }
+
+let bodyA = Shapes.polygon({
+    position: new Vector(min.x + padding.x, 0), radius: 2, sides: 3,
+    density: 2.5,  restitution: 0.3
+})
+
+bodyA.linearVelocity = Vector.multiply(Vector.RIGHT, 20)
+bodyA.angularVelocity = Random.float(MathF.PI_OVER_TWO, Math.PI)
+
+WORLD.addBody(bodyA)
 
 let fps = 0
 
@@ -105,13 +113,13 @@ RENDERER.on('render', (graphics) => {
 
         if (collider instanceof CircleCollider) graphics.drawCircleLine(transform.position.x, transform.position.y, collider.radius, 2, DefaultColors.White)
         else if (collider instanceof PolygonCollider) graphics.drawPolyLine(collider.getTransformedVertices(transform), 2, DefaultColors.White)
-        
-        graphics.drawCircleFill(transform.position.x, transform.position.y, .1, DefaultColors.Red)
 
         let d = MathF.rotate(Vector.add(transform.position, Vector.RIGHT), transform.rotation, transform.position)
 
-        graphics.drawLine(transform.position.x, transform.position.y, d.x, d.y, 2, DefaultColors.Red)
+        graphics.drawLine(transform.position.x, transform.position.y, d.x, d.y, 2, DefaultColors.Green)
     }
+
+    for (let contact of WORLD.points) graphics.drawCircleFill(contact.x, contact.y, .2, DefaultColors.Red)
 
     graphics.drawText(`Fps: ${Math.round(fps)}`, min.x + 1, min.y + 3, '50px sans-serif', DefaultColors.White)
 })
