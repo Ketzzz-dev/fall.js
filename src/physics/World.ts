@@ -23,7 +23,7 @@ export class World {
         return true
     }
 
-    public step(delta: number): void {        
+    public update(delta: number): void {        
         this._collisions = []
 
         for (let a of this._bodies) {
@@ -41,7 +41,7 @@ export class World {
         for (let body of this._bodies) {
             body.force = Vector.add(body.force, Vector.multiply(body.mass, this._gravity))
 
-            body.step(delta)
+            body.update(delta)
         }
     }
 

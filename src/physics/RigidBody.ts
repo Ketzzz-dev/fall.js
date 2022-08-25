@@ -67,7 +67,7 @@ export class RigidBody {
     //     this.angularVelocity += this.inverseInertia * FMath.cross(impulsePoint, impulse)
     // }
 
-    public step(delta: number): void {
+    public update(delta: number): void {
         if (this.isStatic) return
 
         // force integration

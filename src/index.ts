@@ -1,17 +1,19 @@
-import { Engine } from './core/Engine'
-import { Renderer } from './core/Renderer'
 import { AABB } from './geometry/AABB'
 import { CircleCollider, PolygonCollider } from './physics/Colliders'
 import { RigidBody } from './physics/RigidBody'
 import { Shapes } from './physics/Shapes'
 import { Vector } from './physics/Vector'
-import { World } from './physics/World'
 import { FMath } from './utility/FMath'
 import { Random } from './utility/Random'
+import { Engine } from './core/Engine'
 
-const ENGINE = new Engine
-const RENDERER = new Renderer(innerWidth, innerHeight)
-const WORLD = new World
+const ENGINE = new Engine({
+    tickRate: 50,
+    renderer: {
+        width: innerWidth,
+        height: innerHeight
+    }
+})
 
 enum DefaultColors {
     Black = '#5C6370',
@@ -24,9 +26,9 @@ enum DefaultColors {
     White = '#DCDFE4'
 }
 
-document.body.appendChild(RENDERER.canvas)
+document.body.appendChild(ENGINE.renderer.canvas)
 
-let { min, max } = RENDERER.camera.bounds
+let { min, max } = ENGINE.renderer.camera.bounds
 let padding = Vector.multiply(.1, Vector.subtract(max, min))
 
 let ground = Shapes.rectangle({
@@ -34,7 +36,7 @@ let ground = Shapes.rectangle({
     density: 3, restitution: 0.2, isStatic: true
 })
 
-WORLD.addBody(ground)
+ENGINE.world.addBody(ground)
 
 let platformA = Shapes.rectangle({
     position: new Vector(min.x + padding.x * 3, min.y + padding.y * 5.5), rotation: .175 * FMath.PI_OVER_TWO,
@@ -42,7 +44,7 @@ let platformA = Shapes.rectangle({
     density: 3, restitution: 0.2, isStatic: true
 })
 
-WORLD.addBody(platformA)
+ENGINE.world.addBody(platformA)
 
 let platformB = Shapes.rectangle({
     position: new Vector(max.x - padding.x * 3, min.y + padding.y * 4), rotation: -.175 * FMath.PI_OVER_TWO,
@@ -50,7 +52,7 @@ let platformB = Shapes.rectangle({
     density: 3, restitution: 0.2, isStatic: true
 })
 
-WORLD.addBody(platformB)
+ENGINE.world.addBody(platformB)
 
 for (let i = 0; i < 20; i++) {
     let x = Random.float(min.x + padding.x * 2, max.x - padding.x * 2)
@@ -70,31 +72,18 @@ for (let i = 0; i < 20; i++) {
         density: 2.5, restitution: 0
     })
 
-    WORLD.addBody(body)
+    ENGINE.world.addBody(body)
 }
 
-let fps = 0
-
-ENGINE.on('tick', (delta) => {
-    WORLD.step(delta)
-
-    let total = 0
-
-    for (let dt of ENGINE.deltaHistory) total += dt
-
-    fps = ENGINE.deltaHistory.length / total
-    
-    RENDERER.update()
-})
-RENDERER.on('render', (graphics) => {
-    let bodies = Reflect.get(WORLD, '_bodies') as RigidBody[]
+ENGINE.renderer.on('render', (graphics) => {
+    let bodies = Reflect.get(ENGINE.world, '_bodies') as RigidBody[]
 
     for (let body of bodies) {
         let { transform, collider } = body
 
         let bounds = collider.getBounds(transform)
 
-        if (!AABB.overlaps(bounds, RENDERER.camera.bounds))
+        if (!AABB.overlaps(bounds, ENGINE.renderer.camera.bounds))
             continue
 
         if (collider instanceof CircleCollider) graphics.drawCircleLine(transform.position.x, transform.position.y, collider.radius, 1, DefaultColors.White)
@@ -104,11 +93,6 @@ RENDERER.on('render', (graphics) => {
 
         graphics.drawLine(transform.position.x, transform.position.y, d.x, d.y, 1, DefaultColors.Green)
     }
-
-    graphics.drawText(`Fps: ${Math.round(fps)}`, min.x + 1, min.y + 3, '50px sans-serif', DefaultColors.White)
-    graphics.drawText(`Bodies: ${Reflect.get(WORLD, '_bodies').length}`, min.x + 1, min.y + 6, '50px sans-serif', DefaultColors.White)
 })
-
-onload = () => ENGINE.start()
 
 console.log('WILL ALL FEMALES PLEASE MOVE TO #MEMES, WE ARE PLAYING BTD6!!!')
