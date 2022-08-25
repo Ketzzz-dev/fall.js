@@ -1,5 +1,5 @@
 import { AABB } from '../geometry/AABB'
-import { MathF } from '../utility/MathF'
+import { FMath } from '../utility/FMath'
 import { Transform } from './Transform'
 import { Vector } from './Vector'
 
@@ -42,7 +42,7 @@ export class PolygonCollider extends Collider {
         let { position, rotation } = parentTransform
 
         return this._localVertices.map(v => Vector.add(
-            MathF.rotate(v, rotation),
+            FMath.rotate(v, rotation),
             position
         ))
     }

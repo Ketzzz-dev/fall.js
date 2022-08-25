@@ -1,4 +1,4 @@
-import { MathF } from '../utility/MathF'
+import { FMath } from '../utility/FMath'
 import { Vector } from './Vector'
 import { Transform } from './Transform'
 import { Collider } from './Colliders'
@@ -48,9 +48,9 @@ export class RigidBody {
         this.isStatic = isStatic ?? false
 
         if (this.isStatic) {
-            this.mass = Infinity
+            this.mass = 0
             this.inverseMass = 0
-            this.inertia = Infinity
+            this.inertia = 0
             this.inverseInertia = 0
         } else {
             this.mass = mass
@@ -59,25 +59,32 @@ export class RigidBody {
             this.inverseInertia = 1 / this.inertia
         }
 
-        this.restitution = MathF.clamp(restitution)
-
+        this.restitution = FMath.clamp(restitution)
     }
 
-    public step(delta: number, gravity: Vector): void {
-        if (this.isStatic)
-            return
+    // public applyImpulse(impulse: Vector, impulsePoint = this.transform.position): void {
+    //     this.linearVelocity = Vector.add(this.linearVelocity, Vector.multiply(this.inverseMass, impulse))
+    //     this.angularVelocity += this.inverseInertia * FMath.cross(impulsePoint, impulse)
+    // }
 
-        this.force = Vector.add(this.force, Vector.multiply(this.mass, gravity))
+    public step(delta: number): void {
+        if (this.isStatic) return
 
+        // force integration
         let linearAcceleration = Vector.multiply(this.force, this.inverseMass)
         let angularAcceleration = this.torque * this.inverseInertia
 
-        this.linearVelocity = Vector.add(this.linearVelocity, Vector.multiply(linearAcceleration, delta))
+        this.linearVelocity = Vector.add(this.linearVelocity, Vector.multiply(linearAcceleration, delta)),
         this.angularVelocity += angularAcceleration * delta
 
-        this.transform.position = Vector.add(this.transform.position, Vector.multiply(this.linearVelocity, delta))
-        this.transform.rotation += this.angularVelocity * delta
-        
+        let { transform } = this
+
+        // velocity integration
+        transform.position = Vector.add(this.transform.position, Vector.multiply(this.linearVelocity, delta))
+        transform.rotation += this.angularVelocity * delta
+        transform.rotation += transform.rotation > FMath.TWO_PI ? -FMath.TWO_PI : FMath.TWO_PI
+
+        // reset forces
         this.force = Vector.ZERO
         this.torque = 0
     }

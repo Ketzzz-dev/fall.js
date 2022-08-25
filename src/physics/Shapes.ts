@@ -1,4 +1,4 @@
-import { MathF } from '../utility/MathF'
+import { FMath } from '../utility/FMath'
 import { CircleCollider, PolygonCollider } from './Colliders'
 import { RigidBody } from './RigidBody'
 import { Vector } from './Vector'
@@ -64,13 +64,12 @@ export namespace Shapes {
     export function polygon(options: PolygonOptions): RigidBody {
         let { sides, radius, position, rotation, density, isStatic, restitution } = options
 
-        let theta = MathF.TWO_PI / sides
-        let offset = .5 * theta
+        let theta = FMath.TWO_PI / sides
 
         let vertices = [] as Vector[]
 
         for (let i = 0; i < sides; i++) {
-            let angle = offset + i * theta
+            let angle = i * theta
 
             vertices.push(new Vector(
                 Math.cos(angle) * radius,

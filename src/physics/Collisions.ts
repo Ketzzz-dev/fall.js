@@ -1,8 +1,8 @@
 import { AABB } from '../geometry/AABB'
-import { MathF } from '../utility/MathF'
+import { FMath } from '../utility/FMath'
 import { Pair } from '../utility/Pair'
 import { CircleCollider, PolygonCollider } from './Colliders'
-import { CollisionPoints } from './CollisionManifold'
+import { CollisionManifold, CollisionPoints } from './CollisionManifold'
 import { RigidBody } from './RigidBody'
 import { Transform } from './Transform'
 import { Vector } from './Vector'
@@ -43,7 +43,7 @@ export namespace Collisions {
         let max = Number.NEGATIVE_INFINITY
 
         for (let vertex of vertices) {
-            let projection = MathF.dot(vertex, axis)
+            let projection = FMath.dot(vertex, axis)
 
             if (projection < min) min = projection
             if (projection > max) max = projection
@@ -58,8 +58,8 @@ export namespace Collisions {
         let start = Vector.add(center, pointToEdge)
         let end = Vector.subtract(center, pointToEdge)
 
-        let min = MathF.dot(start, axis)
-        let max = MathF.dot(end, axis)
+        let min = FMath.dot(start, axis)
+        let max = FMath.dot(end, axis)
 
         if (min >= max) [min, max] = [max, min]
 
@@ -71,7 +71,7 @@ export namespace Collisions {
         let minDistance = Number.POSITIVE_INFINITY
 
         for (let vertex of polygonVertices) {
-            let distance = MathF.distance(vertex, point)
+            let distance = FMath.distance(vertex, point)
 
             if (distance < minDistance) [minDistance, closestPoint] = [distance, vertex]
         }
@@ -84,7 +84,7 @@ export namespace Collisions {
         let ab = Vector.subtract(end, start)
         let ap = Vector.subtract(point, start)
 
-        let projection = MathF.dot(ap, ab)
+        let projection = FMath.dot(ap, ab)
         let distanceSq = projection / ab.magnitudeSq
 
         if (distanceSq < 0) closestPoint = start
@@ -105,9 +105,12 @@ export namespace Collisions {
         if (distance > totalRadius) return
 
         let normal = delta.normalized
+        
+        let pointA = Vector.add(transformA.position, Vector.multiply(normal, colliderA.radius))
+        let pointB = Vector.subtract(transformB.position, Vector.multiply(normal, colliderB.radius))
 
         return {
-            contact: Vector.add(transformA.position, Vector.multiply(normal, colliderA.radius)),
+            contacts: [pointA, pointB],
             normal, depth: totalRadius - distance
         }
     }
@@ -122,7 +125,8 @@ export namespace Collisions {
         let normal = Vector.ZERO
 
         let minDistanceSq = Number.POSITIVE_INFINITY
-        let contact = Vector.ZERO
+        let pointA = Vector.ZERO
+        let pointB = Vector.ZERO
 
         for (let i = 0; i < verticesA.length; i++) {
             let start = verticesA[i]
@@ -141,10 +145,13 @@ export namespace Collisions {
             if (overlap < depth) [depth, normal] = [overlap, axis]
 
             let closestPoint = findClosestLineSegmentPoint(transformB.position, start, end)
-            let distanceSq = MathF.distanceSq(transformB.position, closestPoint)
+            let distanceSq = FMath.distanceSq(transformB.position, closestPoint)
 
-            if (distanceSq < minDistanceSq) [minDistanceSq, contact] = [distanceSq, closestPoint]
+            if (distanceSq < minDistanceSq) [minDistanceSq, pointA] = [distanceSq, closestPoint]
         }
+
+        minDistanceSq = Number.POSITIVE_INFINITY
+        
         for (let i = 0; i < verticesB.length; i++) {
             let start = verticesB[i]
             let end = verticesB[(i + 1) % verticesB.length]
@@ -162,16 +169,19 @@ export namespace Collisions {
             if (overlap < depth) [depth, normal] = [overlap, axis]
 
             let closestPoint = findClosestLineSegmentPoint(transformA.position, start, end)
-            let distanceSq = MathF.distanceSq(transformA.position, closestPoint)
+            let distanceSq = FMath.distanceSq(transformA.position, closestPoint)
 
-            if (distanceSq < minDistanceSq) [minDistanceSq, contact] = [distanceSq, closestPoint]
+            if (distanceSq < minDistanceSq) [minDistanceSq, pointB] = [distanceSq, closestPoint]
         }
 
         let direction = Vector.subtract(transformB.position, transformA.position)
 
-        if (MathF.dot(direction, normal) < 0) normal = normal.negative
+        if (FMath.dot(direction, normal) < 0) normal = normal.negative
 
-        return { contact, normal, depth }
+        return {
+            contacts: [pointA, pointB],
+            normal, depth
+        }
     }
     export function findCirclePolygonCollisionPoints(
         circleCollider: CircleCollider, circleTransform: Transform,
@@ -183,7 +193,7 @@ export namespace Collisions {
         let normal = Vector.ZERO
 
         let minDistanceSq = Number.POSITIVE_INFINITY
-        let contact = Vector.ZERO
+        let pointA = Vector.ZERO
 
         for (let i = 0; i < polygonVertices.length; i++) {
             let start = polygonVertices[i]
@@ -202,9 +212,9 @@ export namespace Collisions {
             if (overlap < depth) [depth, normal] = [overlap, axis]
 
             let closestPoint = findClosestLineSegmentPoint(circleTransform.position, start, end)
-            let distanceSq = MathF.distanceSq(circleTransform.position, closestPoint)
+            let distanceSq = FMath.distanceSq(circleTransform.position, closestPoint)
 
-            if (distanceSq < minDistanceSq) [minDistanceSq, contact] = [distanceSq, closestPoint]
+            if (distanceSq < minDistanceSq) [minDistanceSq, pointA] = [distanceSq, closestPoint]
         }
 
         let closestPoint = findClosestPolygonPoint(circleTransform.position, polygonVertices)
@@ -221,9 +231,13 @@ export namespace Collisions {
 
         let direction = Vector.subtract(polygonTransform.position, circleTransform.position)
 
-        if (MathF.dot(direction, normal) < 0) normal = normal.negative
+        if (FMath.dot(direction, normal) < 0) normal = normal.negative
 
+        let pointB = Vector.add(circleTransform.position, Vector.multiply(normal, circleCollider.radius))
 
-        return { contact, normal, depth }
+        return {
+            contacts: [pointA, pointB],
+            normal, depth
+        }
     }
 }

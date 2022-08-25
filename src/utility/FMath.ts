@@ -1,8 +1,9 @@
 import { Vector } from '../physics/Vector'
 
-export namespace MathF {
+export namespace FMath {
     export const TWO_PI = 2 * Math.PI
     export const PI_OVER_TWO = Math.PI / 2
+    export const PI_OVER_FOUR = Math.PI / 4
 
     export function distance(a: Vector, b: Vector): number {
         let deltaX = a.x - b.x
@@ -53,8 +54,8 @@ export namespace MathF {
     export function fuzzyEquals(a: number, b: number, epsilon?: number): boolean
     export function fuzzyEquals(a: Vector, b: Vector, epsilon?: number): boolean
     export function fuzzyEquals(a: Vector | number, b: Vector | number, epsilon = Number.EPSILON): boolean {
-        if (typeof a == 'number' && typeof b == 'number') return Math.abs(a - b) < epsilon
-        else if (typeof a == 'object' && typeof b == 'object') return Math.abs(a.x - b.x) < epsilon && Math.abs(a.y - b.y) < epsilon
+        if (typeof a == 'number' && typeof b == 'number') return Math.abs(a - b) <= epsilon
+        else if (typeof a == 'object' && typeof b == 'object') return Math.abs(a.x - b.x) <= epsilon && Math.abs(a.y - b.y) < epsilon
         
         throw new TypeError('Arguments \'a\' and \'b\' must be of type \'number\' or \'Vector\'.')
     }

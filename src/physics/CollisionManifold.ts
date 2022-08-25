@@ -3,7 +3,7 @@ import { RigidBody } from './RigidBody'
 import { Vector } from './Vector'
 
 export interface CollisionPoints {
-    contact: Vector
+    contacts: [Vector, Vector]
 
     normal: Vector
     depth: number
