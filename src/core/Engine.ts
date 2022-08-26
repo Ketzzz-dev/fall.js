@@ -5,7 +5,8 @@ import { TimeStep } from './TimeStep'
 
 export interface EngineEvents {
     'initialize': []
-    'tick': []
+    'update': [delta: number]
+    'render': []
 }
 export interface EngineOptions {
     tickRate: number,
@@ -31,7 +32,7 @@ export class Engine extends EventEmitter<EngineEvents> {
         let { renderer, tickRate } = options
 
         this.world = new World()
-        this.renderer = new Renderer(renderer.width, renderer.height)
+        this.renderer = new Renderer()
 
         this.tickRate = tickRate
         this.delta = 1 / this.tickRate
@@ -51,11 +52,11 @@ export class Engine extends EventEmitter<EngineEvents> {
         if (this.accumulator > 1) this.accumulator = 1
 
         while (this.accumulator > this.delta) {
-            this.world.update(this.delta)
+            this.emit('update', this.delta)
 
             this.accumulator -= this.delta
         }
 
-        this.renderer.update()
+        this.emit('render')
     }
 }
