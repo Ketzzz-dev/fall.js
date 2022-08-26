@@ -5,6 +5,7 @@ import { Collider } from './Colliders'
 
 export interface RigidBodyOptions {
     position: Vector
+    scale?: Vector
     rotation?: number
     collider: Collider
     density: number
@@ -37,9 +38,9 @@ export class RigidBody {
     public readonly collider: Collider
 
     public constructor (options: RigidBodyOptions) {
-        let { position, rotation, collider, density, area, mass, inertia, isStatic, restitution } = options
+        let { position, scale, rotation, collider, density, area, mass, inertia, isStatic, restitution } = options
 
-        this.transform = new Transform(position, rotation)
+        this.transform = new Transform(position, scale, rotation)
         this.collider = collider
 
         this.density = density
