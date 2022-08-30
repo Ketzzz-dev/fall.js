@@ -4,6 +4,16 @@
   "description": "A standard Javascipt physics engine.",
   "main": "dist/index.js",
   "types": "types/index.d.ts",
+  "exports": {
+    "./core": {
+      "default": "./dist/core",
+      "types": "./types/core.d.ts"
+    },
+    "./math": {
+      "default": "./dist/math",
+      "types": "./types/math.d.ts"
+    }
+  },
   "scripts": {
     "start": "snowpack dev",
     "build": "tsc && snowpack build"

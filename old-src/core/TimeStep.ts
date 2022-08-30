@@ -1,5 +1,5 @@
 import EventEmitter from 'eventemitter3'
-import { FMath } from '../math'
+import { FMath } from '../utility/FMath'
 
 export interface TimeStepEvents {
     'tick': [delta: number]
@@ -11,23 +11,23 @@ export class TimeStep extends EventEmitter<TimeStepEvents> {
     public static readonly MIN_DELTA = 1 / 120
     public static readonly MAX_DELTA = 1 / 12
 
-    public static readonly MAX_DELTA_HISTORY_LENGTH = 100
+    public static readonly MAX_DELTA_HISTORY_LENGTH = 60
 
-    private _lastTime = 0
-    private _frameRequestId = 0
+    private lastTime = 0
+    private frameRequestId = 0
 
     public delta = 0
-    public deltaHistory = [] as number[]
+    public deltaHistory = Array<number>(TimeStep.MAX_DELTA_HISTORY_LENGTH).fill(TimeStep.MAX_DELTA)
 
     public isRunning = false
     
     private _tick(): void {
-        this._frameRequestId = requestAnimationFrame(this._tick.bind(this))
+        this.frameRequestId = requestAnimationFrame(this._tick.bind(this))
 
         let time = performance.now() / 1000
-        let delta = time - this._lastTime
+        let delta = time - this.lastTime
 
-        this._lastTime = time
+        this.lastTime = time
 
         this.deltaHistory.push(delta)
 
@@ -45,7 +45,7 @@ export class TimeStep extends EventEmitter<TimeStepEvents> {
         if (this.isRunning)
             return
 
-        this._frameRequestId = requestAnimationFrame(this._tick.bind(this))
+        this.frameRequestId = requestAnimationFrame(this._tick.bind(this))
 
         this.emit('start')
     }
@@ -53,7 +53,7 @@ export class TimeStep extends EventEmitter<TimeStepEvents> {
         if (!this.isRunning)
             return
         
-        cancelAnimationFrame(this._frameRequestId)
+        cancelAnimationFrame(this.frameRequestId)
 
         this.emit('stop')
     }

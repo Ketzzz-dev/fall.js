@@ -1,9 +1,18 @@
 import assert from 'assert'
 import EventEmitter from 'eventemitter3'
-import { FMath } from '../utility/FMath'
+import { FMath } from '../math'
+import { Collider, World } from '../physics'
+import { Color } from '../util/Color'
+
+export interface RenderingOptions {
+    visible: boolean
+    lineColor?: Color
+    lineWidth?: number
+    fillColor: Color
+}
 
 export interface RendererEvents {
-
+    
 }
 
 export class Renderer extends EventEmitter<RendererEvents> {
@@ -31,5 +40,55 @@ export class Renderer extends EventEmitter<RendererEvents> {
         assert(context, new Error('Your browser is shit!'))
 
         this.context = context
+
+        this.context.lineJoin = 'round'
+    }
+
+    public render(world: World): void {
+        let { canvas, context } = this
+
+        context.globalCompositeOperation = 'source-in'
+        context.fillStyle = 'transparent'
+
+        context.fillRect(0, 0, canvas.width, canvas.height)
+
+        context.globalCompositeOperation = 'source-over'
+
+        context.save()
+        context.translate(.5 * canvas.width, .5 * canvas.height)
+        context.scale(16, 16)
+
+        for (let body of world.bodies) {
+            let { rendering, collider, transform } = body
+
+            if (!rendering.visible) continue
+            if (collider instanceof Collider.Circle) {
+                context.beginPath()
+                context.arc(transform.position.x, transform.position.y, collider.radius, 0, FMath.TWO_PI)
+                context.closePath()
+            } else if (collider instanceof Collider.Polygon) {
+                context.beginPath()
+            
+                context.moveTo(collider.vertices[0].x, collider.vertices[0].y)
+        
+                for (let vertex of collider.vertices) {
+                    context.lineTo(vertex.x, vertex.y)
+                }
+        
+                context.closePath()
+            } else continue
+
+            context.fillStyle = rendering.fillColor.toString()
+            context.fill()
+
+            if (rendering.lineColor && rendering.lineWidth) {
+                context.strokeStyle = rendering.lineColor.toString()
+                context.lineWidth = FMath.clamp(rendering.lineWidth, 1, 10)
+
+                context.stroke()
+            }
+        }
+
+        context.restore()
     }
 }

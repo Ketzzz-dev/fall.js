@@ -1,4 +1,4 @@
-import { Vector } from '../math'
+import { Vector } from '../physics/Vector'
 
 export class AABB {
     public readonly min: Vector

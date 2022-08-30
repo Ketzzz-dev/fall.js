@@ -1,16 +1,19 @@
-import { RenderingOptions } from '../core/Renderer'
-import { Vector, Transform, FMath } from '../math'
-import { Collider } from './Collider'
-import { Material } from './Material'
+import { FMath } from '../utility/FMath'
+import { Vector } from './Vector'
+import { Transform } from './Transform'
+import { Collider } from './Colliders'
 
 export interface RigidBodyOptions {
-    transform: Transform
+    position: Vector
+    scale?: Vector
+    rotation?: number
     collider: Collider
-    material: Material
+    density: number
+    area: number
     mass: number
     inertia: number
+    restitution: number
     isStatic?: boolean
-    rendering: RenderingOptions
 }
 
 export class RigidBody {
@@ -21,7 +24,9 @@ export class RigidBody {
     public angularVelocity = 0
     public torque = 0   
 
-    public readonly material: Material
+    public readonly density: number
+    public readonly area: number
+    public readonly restitution: number
 
     public readonly mass: number
     public readonly inverseMass: number
@@ -31,16 +36,15 @@ export class RigidBody {
     public readonly isStatic: boolean
 
     public readonly collider: Collider
-    public readonly rendering: RenderingOptions
 
     public constructor (options: RigidBodyOptions) {
-        let { transform, collider, rendering, material, mass, inertia, isStatic } = options
+        let { position, scale, rotation, collider, density, area, mass, inertia, isStatic, restitution } = options
 
-        this.transform = transform
+        this.transform = new Transform(position, scale, rotation)
         this.collider = collider
-        this.rendering = rendering
 
-        this.material = material
+        this.density = density
+        this.area = area
 
         this.isStatic = isStatic ?? false
 
@@ -55,6 +59,8 @@ export class RigidBody {
             this.inertia = inertia
             this.inverseInertia = 1 / this.inertia
         }
+
+        this.restitution = FMath.clamp(restitution)
     }
 
     // public applyImpulse(impulse: Vector, impulsePoint = this.transform.position): void {
@@ -76,10 +82,8 @@ export class RigidBody {
 
         // velocity integration
         transform.position = Vector.add(this.transform.position, Vector.multiply(this.linearVelocity, delta))
-        transform.orientation += this.angularVelocity * delta
-
-        // limit orientation between 0 and 360 degrees
-        transform.orientation += transform.orientation > FMath.TWO_PI ? FMath.TWO_PI : FMath.TWO_PI
+        transform.rotation += this.angularVelocity * delta
+        transform.rotation += transform.rotation > FMath.TWO_PI ? -FMath.TWO_PI : FMath.TWO_PI
 
         // reset forces
         this.force = Vector.ZERO

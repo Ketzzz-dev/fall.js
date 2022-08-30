@@ -1,17 +1,16 @@
-import { RenderingOptions } from '../core/Renderer'
-import { FMath, Transform, Vector } from '../math'
-import { Collider } from './Collider'
-import { Material } from './Material'
+import { FMath } from '../utility/FMath'
+import { CircleCollider, PolygonCollider } from './Colliders'
 import { RigidBody } from './RigidBody'
+import { Vector } from './Vector'
+
 
 export namespace Shapes {
     export interface BaseShapeOptions {
-        position?: Vector
-        scale?: number
-        orientation?: number
-        material: Material
+        position: Vector
+        rotation?: number
+        density: number
+        restitution: number
         isStatic?: boolean
-        rendering: RenderingOptions
     }
 
     export interface CircleOptions extends BaseShapeOptions {
@@ -27,22 +26,20 @@ export namespace Shapes {
     }
 
     export function circle(options: CircleOptions): RigidBody {
-        let { radius, material, position, scale, orientation, isStatic, rendering } = options
+        let { radius, density, position, rotation, isStatic, restitution } = options
 
         let area = radius * radius * Math.PI
-        let mass = area * material.density
+        let mass = area * density
         let inertia = (1 / 2) * mass * (radius * radius)
 
-        let transform = new Transform(position, scale, orientation)
-
         return new RigidBody({
-            transform, mass, inertia, material, isStatic,
-            collider: new Collider.Circle(transform, radius), rendering
+            position, rotation, mass, inertia, density, area, isStatic, restitution,
+            collider: new CircleCollider(radius)
         })
     }
     export function rectangle(options: RectangleOptions): RigidBody {
-        let { width, height, material, position, scale, orientation, isStatic, rendering } = options
-
+        let { width, height, density, position, rotation, isStatic, restitution } = options
+        
         let left = .5 * -width
         let right = left + width
         let top = .5 * -height
@@ -56,18 +53,16 @@ export namespace Shapes {
         ]
         
         let area = width * height
-        let mass = area * material.density
+        let mass = area * density
         let inertia = (1 / 12) * mass * (width * width + height * height)
 
-        let transform = new Transform(position, scale, orientation)
-
         return new RigidBody({
-            transform, mass, inertia, material, isStatic,
-            collider: new Collider.Polygon(transform, vertices), rendering
+            position, rotation, mass, inertia, density, area, isStatic, restitution,
+            collider: new PolygonCollider(vertices)
         })
     }
     export function polygon(options: PolygonOptions): RigidBody {
-        let { sides, radius, position, scale, orientation, material, isStatic, rendering } = options
+        let { sides, radius, position, rotation, density, isStatic, restitution } = options
 
         let theta = FMath.TWO_PI / sides
 
@@ -83,15 +78,13 @@ export namespace Shapes {
         }
 
         let area = (radius * radius * sides * Math.sin(theta)) / 2
-        let mass = area * material.density
+        let mass = area * density
         let sin = Math.sin(Math.PI / sides)
         let inertia = (1 / 2) * mass * (radius * radius) * (1 - (2 / 3) * (sin * sin))
 
-        let transform = new Transform(position, scale, orientation)
-
         return new RigidBody({
-            transform, mass, inertia, material, isStatic,
-            collider: new Collider.Polygon(transform, vertices), rendering
+            position, rotation, mass, inertia, density, area, isStatic, restitution,
+            collider: new PolygonCollider(vertices)
         })
     }
 }

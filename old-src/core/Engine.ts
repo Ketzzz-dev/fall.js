@@ -1,4 +1,6 @@
 import EventEmitter from 'eventemitter3'
+import { World } from '../physics/World'
+import { Renderer } from './Renderer'
 import { TimeStep } from './TimeStep'
 
 export interface EngineEvents {
@@ -16,8 +18,8 @@ export interface EngineOptions {
 
 export class Engine extends EventEmitter<EngineEvents> {
     public readonly timestep = new TimeStep()
-    // public readonly world: World
-    // public readonly renderer: Renderer
+    public readonly world: World
+    public readonly renderer: Renderer
 
     public readonly tickRate: number
     public readonly delta: number
@@ -29,8 +31,8 @@ export class Engine extends EventEmitter<EngineEvents> {
 
         let { renderer, tickRate } = options
 
-        // this.world = new World()
-        // this.renderer = new Renderer()
+        this.world = new World()
+        this.renderer = new Renderer()
 
         this.tickRate = tickRate
         this.delta = 1 / this.tickRate
@@ -42,7 +44,6 @@ export class Engine extends EventEmitter<EngineEvents> {
 
     private _initialize(): void {
         this.timestep.on('tick', this._tick.bind(this))
-        this.timestep.start()
     }
 
     private _tick(delta: number): void {
@@ -51,13 +52,11 @@ export class Engine extends EventEmitter<EngineEvents> {
         if (this.accumulator > 1) this.accumulator = 1
 
         while (this.accumulator > this.delta) {
-            // this.world.update(delta)
             this.emit('update', this.delta)
 
             this.accumulator -= this.delta
         }
 
-        // this.renderer.render()
         this.emit('render')
     }
 }

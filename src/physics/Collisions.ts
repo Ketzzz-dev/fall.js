@@ -1,88 +1,63 @@
-import { AABB } from '../geometry/AABB'
-import { FMath } from '../utility/FMath'
-import { Pair } from '../utility/Pair'
-import { CircleCollider, PolygonCollider } from './Colliders'
-import { CollisionManifold, CollisionPoints } from './CollisionManifold'
-import { RigidBody } from './RigidBody'
-import { Transform } from './Transform'
-import { Vector } from './Vector'
+import { FMath, Transform, Vector } from '../math'
+import { Collider } from './Collider'
+import { CollisionManifold } from './CollisionManifold'
 
 export namespace Collisions {
-    export type Projection = [min: number, max: number]
+    export function solve(manifold: CollisionManifold): boolean {
+        let { a: bodyA, b: bodyB } = manifold.bodies
 
-    export function collides(a: RigidBody, b: RigidBody): CollisionPoints | undefined {
-        let { collider: colliderA, transform: transformA } = a
-        let { collider: colliderB, transform: transformB } = b
-
-        if (!AABB.overlaps(colliderA.getBounds(transformA), colliderB.getBounds(transformB)))
-            return
-
-        if (colliderA instanceof CircleCollider) {
-            if (colliderB instanceof CircleCollider) {
-                return Collisions.findCircleCollisionPoints(colliderA, transformA, colliderB, transformB)
-            } else if (colliderB instanceof PolygonCollider) {
-                return Collisions.findCirclePolygonCollisionPoints(colliderA, transformA, colliderB, transformB)
+        if (bodyA.collider instanceof Collider.Circle) {
+            if (bodyB.collider instanceof Collider.Circle) {
+                return circleToCircle(manifold, bodyA.collider, bodyA.transform, bodyB.collider, bodyB.transform)
+            } else if (bodyB.collider instanceof Collider.Polygon) {
+                return circleToPolygon(manifold, bodyA.collider, bodyA.transform, bodyB.collider, bodyB.transform)
             }
-        } else if (colliderA instanceof PolygonCollider) {
-            if (colliderB instanceof CircleCollider) {
-                let points = Collisions.findCirclePolygonCollisionPoints(colliderB, transformB, colliderA, transformA)
-
-                if (points) points.normal = points.normal.negative
-
-                return points
-            } else if (colliderB instanceof PolygonCollider) {
-                return Collisions.findPolygonCollisionPoints(colliderA, transformA, colliderB, transformB)
+        } else if (bodyA.collider instanceof Collider.Polygon) {
+            if (bodyB.collider instanceof Collider.Circle) {
+                return polygonToCircle(manifold, bodyA.collider, bodyA.transform, bodyB.collider, bodyB.transform)
+            } else if (bodyB.collider instanceof Collider.Polygon) {
+                return polygonToPolygon(manifold, bodyA.collider, bodyA.transform, bodyB.collider, bodyB.transform)
             }
         }
 
-        return
+        return false
     }
 
-    export function projectPolygon(vertices: Vector[], axis: Vector): Projection {
-        let min = Number.POSITIVE_INFINITY
-        let max = Number.NEGATIVE_INFINITY
+    export type ProjectionInfo = [min: number, max: number]
+    export type ClosestPointInfo = [closestPoint: Vector, distanceSq: number]
 
-        for (let vertex of vertices) {
+    export function projectPolygonOnAxis(polygonVertices: Vector[], axis: Vector): ProjectionInfo {
+        let min = Infinity
+        let max = -Infinity
+        
+        for (let vertex of polygonVertices) {
             let projection = FMath.dot(vertex, axis)
-
+            
             if (projection < min) min = projection
             if (projection > max) max = projection
         }
+        
+        return [min, max]
+    }
+    export function projectCircleOnAxis(circleCenter: Vector, circleRadius: number, axis: Vector): ProjectionInfo {
+        let pointToEdge = Vector.multiply(axis.normalized, circleRadius)
+         
+        let leftSide = Vector.subtract(circleCenter, pointToEdge)
+        let rightSide = Vector.add(circleCenter, pointToEdge)
+
+        let min = FMath.dot(leftSide, axis)
+        let max = FMath.dot(rightSide, axis)
+
+        if (min > max) [min, max] = [max, min]
 
         return [min, max]
     }
-    export function projectCircle(center: Vector, radius: number, axis: Vector): Projection {
-        let direction = axis.normalized
-        let pointToEdge = Vector.multiply(direction, radius)
 
-        let start = Vector.add(center, pointToEdge)
-        let end = Vector.subtract(center, pointToEdge)
-
-        let min = FMath.dot(start, axis)
-        let max = FMath.dot(end, axis)
-
-        if (min >= max) [min, max] = [max, min]
-
-        return [min, max]
-    }
-
-    export function findClosestPolygonPoint(point: Vector, polygonVertices: Vector[]): Vector {
-        let closestPoint = Vector.ZERO
-        let minDistance = Number.POSITIVE_INFINITY
-
-        for (let vertex of polygonVertices) {
-            let distance = FMath.distance(vertex, point)
-
-            if (distance < minDistance) [minDistance, closestPoint] = [distance, vertex]
-        }
-
-        return closestPoint
-    }
-    export function findClosestLineSegmentPoint(point: Vector, start: Vector, end: Vector): Vector {
-        let closestPoint = Vector.ZERO
-
+    export function closestPointOnSegment(point: Vector, start: Vector, end: Vector): ClosestPointInfo {
         let ab = Vector.subtract(end, start)
         let ap = Vector.subtract(point, start)
+
+        let closestPoint = Vector.ZERO
 
         let projection = FMath.dot(ap, ab)
         let distanceSq = projection / ab.magnitudeSq
@@ -91,153 +66,226 @@ export namespace Collisions {
         else if (distanceSq > 1) closestPoint = end
         else closestPoint = Vector.add(start, Vector.multiply(ab, distanceSq))
 
-        return closestPoint
+        return [closestPoint, FMath.distanceSq(point, closestPoint)]
     }
+    export function closestPointOnPolygon(point: Vector, polygonVertices: Vector[]): ClosestPointInfo {
+        let closestPoint = Vector.ZERO
+        let minDistanceSq = Infinity
 
-    export function findCircleCollisionPoints(
-        colliderA: CircleCollider, transformA: Transform,
-        colliderB: CircleCollider, transformB: Transform
-    ): CollisionPoints | undefined {
-        let delta = Vector.subtract(transformB.position, transformA.position)
-        let totalRadius = colliderA.radius + colliderB.radius
-        let distance = delta.magnitude
+        for (let vertex of polygonVertices) {
+            let distanceSq = FMath.distanceSq(vertex, point)
 
-        if (distance > totalRadius) return
-
-        let normal = delta.normalized
-        
-        let pointA = Vector.add(transformA.position, Vector.multiply(normal, colliderA.radius))
-        let pointB = Vector.subtract(transformB.position, Vector.multiply(normal, colliderB.radius))
-
-        return {
-            contacts: [pointA, pointB],
-            normal, depth: totalRadius - distance
+            if (distanceSq < minDistanceSq) {
+                closestPoint = vertex
+                minDistanceSq = distanceSq
+            }
         }
-    }
-    export function findPolygonCollisionPoints(
-        colliderA: PolygonCollider, transformA: Transform,
-        colliderB: PolygonCollider, transformB: Transform
-    ): CollisionPoints | undefined {
-        let verticesA = colliderA.getTransformedVertices(transformA)
-        let verticesB = colliderB.getTransformedVertices(transformB)
 
-        let depth = Number.POSITIVE_INFINITY
+        return [closestPoint, minDistanceSq]
+    }
+
+    export function circleToCircle(
+        manifold: CollisionManifold,
+        colliderA: Collider.Circle, transformA: Transform,
+        colliderB: Collider.Circle, transformB: Transform
+    ): boolean {
+        let delta = Vector.subtract(transformB.position, transformA.position)
+
+        let distanceSq = delta.magnitudeSq
+        let totalRadius = colliderA.radius + colliderB.radius
+
+        if (distanceSq >= totalRadius * totalRadius) return false
+
+        let distance = Math.sqrt(distanceSq)
+
+        if (distance == 0) {
+            manifold.depth = colliderA.radius
+            manifold.normal = Vector.RIGHT
+            manifold.points = [transformA.position]
+        } else {
+            manifold.depth = totalRadius - distance
+            manifold.normal = Vector.divide(delta, distance)
+            manifold.points = [Vector.add(
+                Vector.multiply(manifold.normal, colliderA.radius),
+                transformA.position
+            )]
+        }   
+        
+        return true
+    }
+    export function polygonToPolygon(
+        manifold: CollisionManifold,
+        colliderA: Collider.Polygon, transformA: Transform,
+        colliderB: Collider.Polygon, transformB: Transform
+    ): boolean {
+        let { vertices: verticesA } = colliderA
+        let { vertices: verticesB } = colliderB
+
+        let depth = Infinity
         let normal = Vector.ZERO
 
-        let minDistanceSq = Number.POSITIVE_INFINITY
+        let minDistanceSq = Infinity
         let pointA = Vector.ZERO
         let pointB = Vector.ZERO
+        let contactPoints = 0
 
         for (let i = 0; i < verticesA.length; i++) {
             let start = verticesA[i]
-            let end = verticesA[(i + 1) % verticesA.length]
-
+            let end = i + 1 < verticesA.length ? verticesA[i + 1] : verticesA[0]
             let edge = Vector.subtract(end, start)
             let axis = new Vector(-edge.y, edge.x).normalized
 
-            let [minA, maxA] = projectPolygon(verticesA, axis)
-            let [minB, maxB] = projectPolygon(verticesB, axis)
+            let [minA, maxA] = projectPolygonOnAxis(verticesA, axis)
+            let [minB, maxB] = projectPolygonOnAxis(verticesB, axis)
 
-            if (minA > maxB || minB > maxA) return
+            if (minA > maxB || minB > maxA) return false
 
-            let overlap = Math.min(maxB - minA, maxA - minB)
+            let axisDepth = Math.min(maxA - minB, maxB - minA)
 
-            if (overlap < depth) [depth, normal] = [overlap, axis]
+            if (axisDepth < depth) {
+                depth = axisDepth
+                normal = axis
+            }
 
-            let closestPoint = findClosestLineSegmentPoint(transformB.position, start, end)
-            let distanceSq = FMath.distanceSq(transformB.position, closestPoint)
+            for (let vertex of verticesB) {
+                let [closestPoint, distanceSq] = closestPointOnSegment(vertex, start, end)
 
-            if (distanceSq < minDistanceSq) [minDistanceSq, pointA] = [distanceSq, closestPoint]
+                if (FMath.fuzzyEquals(distanceSq, minDistanceSq)) {
+                    if (
+                        !FMath.fuzzyEquals(closestPoint, pointA) &&
+                        !FMath.fuzzyEquals(closestPoint, pointB)
+                    ) {
+                        pointB = closestPoint
+                        contactPoints = 2
+                    }
+                } else if (distanceSq < minDistanceSq) {
+                    minDistanceSq = distanceSq
+                    pointA = closestPoint
+                    contactPoints = 1
+                }
+            }
         }
-
-        minDistanceSq = Number.POSITIVE_INFINITY
-        
         for (let i = 0; i < verticesB.length; i++) {
             let start = verticesB[i]
-            let end = verticesB[(i + 1) % verticesB.length]
-
+            let end = i + 1 < verticesB.length ? verticesB[i + 1] : verticesB[0]
             let edge = Vector.subtract(end, start)
             let axis = new Vector(-edge.y, edge.x).normalized
 
-            let [minA, maxA] = projectPolygon(verticesA, axis)
-            let [minB, maxB] = projectPolygon(verticesB, axis)
+            let [minA, maxA] = projectPolygonOnAxis(verticesA, axis)
+            let [minB, maxB] = projectPolygonOnAxis(verticesB, axis)
 
-            if (minA > maxB || minB > maxA) return
+            if (minA > maxB || minB > maxA) return false
 
-            let overlap = Math.min(maxB - minA, maxA - minB)
+            let axisDepth = Math.min(maxA - minB, maxB - minA)
 
-            if (overlap < depth) [depth, normal] = [overlap, axis]
+            if (axisDepth < depth) {
+                depth = axisDepth
+                normal = axis
+            }
 
-            let closestPoint = findClosestLineSegmentPoint(transformA.position, start, end)
-            let distanceSq = FMath.distanceSq(transformA.position, closestPoint)
+            for (let vertex of verticesA) {
+                let [closestPoint, distanceSq] = closestPointOnSegment(vertex, start, end)
 
-            if (distanceSq < minDistanceSq) [minDistanceSq, pointB] = [distanceSq, closestPoint]
+                if (FMath.fuzzyEquals(distanceSq, minDistanceSq)) {
+                    if (
+                        !FMath.fuzzyEquals(closestPoint, pointA) &&
+                        !FMath.fuzzyEquals(closestPoint, pointB)
+                    ) {
+                        pointB = closestPoint
+                        contactPoints = 2
+                    }
+                } else if (distanceSq < minDistanceSq) {
+                    minDistanceSq = distanceSq
+                    pointA = closestPoint
+                    contactPoints = 1
+                }
+            }
         }
 
         let direction = Vector.subtract(transformB.position, transformA.position)
 
         if (FMath.dot(direction, normal) < 0) normal = normal.negative
 
-        return {
-            contacts: [pointA, pointB],
-            normal, depth
-        }
+        manifold.depth = depth
+        manifold.normal = normal
+        manifold.points = contactPoints == 1 ? [pointA] : [pointA, pointB]
+        
+        return true
     }
-    export function findCirclePolygonCollisionPoints(
-        circleCollider: CircleCollider, circleTransform: Transform,
-        polygonCollider: PolygonCollider, polygonTransform: Transform
-    ): CollisionPoints | undefined {
-        let polygonVertices = polygonCollider.getTransformedVertices(polygonTransform)
+    export function circleToPolygon(
+        manifold: CollisionManifold,
+        colliderA: Collider.Circle, transformA: Transform,
+        colliderB: Collider.Polygon, transformB: Transform
+    ): boolean {
+        let { vertices: polygonVertices } = colliderB
 
-        let depth = Number.POSITIVE_INFINITY
+        let depth = Infinity
         let normal = Vector.ZERO
 
-        let minDistanceSq = Number.POSITIVE_INFINITY
-        let pointA = Vector.ZERO
+        let minDistanceSq = Infinity
+        let contactPoint = Vector.ZERO
 
         for (let i = 0; i < polygonVertices.length; i++) {
             let start = polygonVertices[i]
-            let end = polygonVertices[(i + 1) % polygonVertices.length]
-
+            let end = i + 1 < polygonVertices.length ? polygonVertices[i + 1] : polygonVertices[0]
             let edge = Vector.subtract(end, start)
             let axis = new Vector(-edge.y, edge.x).normalized
 
-            let [minA, maxA] = projectPolygon(polygonVertices, axis)
-            let [minB, maxB] = projectCircle(circleTransform.position, circleCollider.radius, axis)
+            let [minA, maxA] = projectCircleOnAxis(transformA.position, colliderA.radius, axis)
+            let [minB, maxB] = projectPolygonOnAxis(polygonVertices, axis)
 
-            if (minA > maxB || minB > maxA) return
+            if (minA > maxB || minB > maxA) return false
 
-            let overlap = Math.min(maxB - minA, maxA - minB)
+            let axisDepth = Math.min(maxA - minB, maxB - minA)
 
-            if (overlap < depth) [depth, normal] = [overlap, axis]
+            if (axisDepth < depth) {
+                depth = axisDepth
+                normal = axis
+            }
 
-            let closestPoint = findClosestLineSegmentPoint(circleTransform.position, start, end)
-            let distanceSq = FMath.distanceSq(circleTransform.position, closestPoint)
+            let [closestPoint, distanceSq] = closestPointOnSegment(transformA.position, start, end)
 
-            if (distanceSq < minDistanceSq) [minDistanceSq, pointA] = [distanceSq, closestPoint]
+            if (distanceSq < minDistanceSq) {
+                minDistanceSq = distanceSq
+                contactPoint = closestPoint
+            }
         }
 
-        let closestPoint = findClosestPolygonPoint(circleTransform.position, polygonVertices)
-        let axis = Vector.subtract(closestPoint, circleTransform.position).normalized
+        let [closestPoint] = closestPointOnPolygon(transformA.position, polygonVertices)
 
-        let [minA, maxA] = projectPolygon(polygonVertices, axis)
-        let [minB, maxB] = projectCircle(circleTransform.position, circleCollider.radius, axis)
+        let axis = Vector.subtract(closestPoint, transformA.position)
 
-        if (minA > maxB || minB > maxA) return
+        let [minA, maxA] = projectCircleOnAxis(transformA.position, colliderA.radius, axis)
+        let [minB, maxB] = projectPolygonOnAxis(polygonVertices, axis)
 
-        let overlap = Math.min(maxB - minA, maxA - minB)
+        if (minA > maxB || minB > maxA) return false
 
-        if (overlap < depth) [depth, normal] = [overlap, axis]
+        let axisDepth = Math.min(maxA - minB, maxB - minA)
 
-        let direction = Vector.subtract(polygonTransform.position, circleTransform.position)
+        if (axisDepth < depth) {
+            depth = axisDepth
+            normal = axis
+        }
+
+        let direction = Vector.subtract(transformB.position, transformA.position)
 
         if (FMath.dot(direction, normal) < 0) normal = normal.negative
 
-        let pointB = Vector.add(circleTransform.position, Vector.multiply(normal, circleCollider.radius))
+        manifold.depth = depth
+        manifold.normal = normal
+        manifold.points = [contactPoint]
 
-        return {
-            contacts: [pointA, pointB],
-            normal, depth
-        }
+        return true
+    }
+    export function polygonToCircle(
+        manifold: CollisionManifold,
+        colliderA: Collider.Polygon, transformA: Transform,
+        colliderB: Collider.Circle, transformB: Transform
+    ): boolean {
+        let collision = circleToPolygon(manifold, colliderB, transformB, colliderA, transformA)
+
+        manifold.normal = manifold.normal.negative
+
+        return collision
     }
 }

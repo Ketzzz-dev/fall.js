@@ -1,20 +1,15 @@
-import { Pair } from '../utility/Pair'
+import { Vector } from '../math'
+import { Pair } from '../util'
 import { RigidBody } from './RigidBody'
-import { Vector } from './Vector'
-
-export interface CollisionPoints {
-    contacts: [Vector, Vector]
-
-    normal: Vector
-    depth: number
-}
 
 export class CollisionManifold {
     public readonly bodies: Pair<RigidBody>
-    public readonly points: CollisionPoints
 
-    public constructor (a: RigidBody, b: RigidBody, points: CollisionPoints) {
-        this.bodies = new Pair(a, b)
-        this.points = points
+    public points = [] as Vector[]
+    public normal = Vector.ZERO
+    public depth = 0
+
+    public constructor (bodyA: RigidBody, bodyB: RigidBody) {
+        this.bodies = new Pair(bodyA, bodyB)
     }
 }
