@@ -1,4 +1,4 @@
-import { RenderingOptions } from '../core/Renderer'
+import { RenderableObjectConfig, Renderer, RenderingOptions } from '../core/Renderer'
 import { Vector, Transform, FMath } from '../math'
 import { Collider } from './Collider'
 import { Material } from './Material'
@@ -10,7 +10,7 @@ export interface RigidBodyOptions {
     mass: number
     inertia: number
     isStatic?: boolean
-    rendering: RenderingOptions
+    rendering?: RenderingOptions
 }
 
 export class RigidBody {
@@ -31,14 +31,14 @@ export class RigidBody {
     public readonly isStatic: boolean
 
     public readonly collider: Collider
-    public readonly rendering: RenderingOptions
+    public readonly rendering: RenderableObjectConfig
 
     public constructor (options: RigidBodyOptions) {
         let { transform, collider, rendering, material, mass, inertia, isStatic } = options
 
         this.transform = transform
         this.collider = collider
-        this.rendering = rendering
+        this.rendering = Renderer.setConfig(rendering)
 
         this.material = material
 

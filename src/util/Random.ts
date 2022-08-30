@@ -20,7 +20,7 @@ export namespace Random {
     }
 
     export function fromArray<T>(array: T[]): T {
-        let index = Random.integer(0, array.length)
+        let index = Random.integer(0, array.length - 1)
 
         return array[index]
     }

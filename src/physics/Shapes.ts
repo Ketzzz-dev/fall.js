@@ -11,7 +11,7 @@ export namespace Shapes {
         orientation?: number
         material: Material
         isStatic?: boolean
-        rendering: RenderingOptions
+        rendering?: RenderingOptions
     }
 
     export interface CircleOptions extends BaseShapeOptions {

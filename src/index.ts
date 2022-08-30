@@ -16,20 +16,22 @@ document.getElementById('main')?.append(RENDERER.canvas)
 
 RENDERER.canvas.style.backgroundColor = Color.BLACK.toString()
 
+let { min, max } = RENDERER.camera.bounds
+let padding = Vector.multiply(.1, Vector.subtract(max, min))
+
 let ground = Shapes.rectangle({
-    position: new Vector(0, 0 + 30),
-    material: Material.ROCK, width: innerWidth / 16 - 3, height: 3, isStatic: true,
+    position: new Vector(0, max.y - padding.y),
+    material: Material.ROCK, width: max.x - min.x - padding.x, height: 3, isStatic: true,
     rendering: { fillColor: Color.GREEN, visible: true }
 })
 
 WORLD.addBody(ground)
 
 for (let i = 0; i < 20; i++) {
-    let x = Random.float(-30, 30)
-    let y = Random.float(-30, -10)
+    let x = Random.float(min.x + padding.x * 2, max.x - padding.x * 2)
+    let y = Random.float(min.y + padding.y, -padding.y * 2)
     let orientation = Random.float(0, FMath.TWO_PI)
-    let material = Material.WOOD
-    let rendering = { fillColor: Color.RED, visible: true }
+    let material = Material.METAL
 
     let body: RigidBody
 
@@ -38,7 +40,7 @@ for (let i = 0; i < 20; i++) {
 
         body = Shapes.circle({
             position: new Vector(x, y), orientation,
-            material, radius, rendering
+            material, radius
         })
     } else if (Random.boolean()) {
         let radius = Random.float(1.2, 1.8)
@@ -46,7 +48,7 @@ for (let i = 0; i < 20; i++) {
 
         body = Shapes.polygon({
             position: new Vector(x, y), orientation,
-            material, radius, sides, rendering
+            material, radius, sides
         })
     } else {
         let width = Random.float(1.8, 3.6)
@@ -54,7 +56,7 @@ for (let i = 0; i < 20; i++) {
 
         body = Shapes.rectangle({
             position: new Vector(x, y), orientation,
-            material, width, height, rendering
+            material, width, height
         })
     }
 
@@ -74,5 +76,7 @@ ENGINE.on('update', (delta) => {
 }).on('render', () => {
     RENDERER.render(WORLD)
 })
+
+console.log(ENGINE)
 
 export {}

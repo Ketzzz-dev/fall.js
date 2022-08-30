@@ -1,13 +1,22 @@
 import assert from 'assert'
 import EventEmitter from 'eventemitter3'
-import { FMath } from '../math'
+import { AABB } from '../geometry'
+import { FMath, Vector } from '../math'
 import { Collider, World } from '../physics'
 import { Color } from '../util/Color'
+import { Random } from '../util/Random'
+import { Camera } from './Camera'
 
 export interface RenderingOptions {
-    visible: boolean
+    visible?: boolean
     lineColor?: Color
     lineWidth?: number
+    fillColor?: Color
+}
+export interface RenderableObjectConfig {
+    visible: boolean
+    lineColor: Color
+    lineWidth: number
     fillColor: Color
 }
 
@@ -19,8 +28,23 @@ export class Renderer extends EventEmitter<RendererEvents> {
     public static readonly MIN_DIMENSION = 64
     public static readonly MAX_DIMENSION = 2048
 
+    public static readonly PIXELS_PER_UNIT = 16
+
     public readonly canvas: HTMLCanvasElement
     public readonly context: CanvasRenderingContext2D
+
+    public readonly camera: Camera
+
+    public static setConfig(options?: RenderingOptions): RenderableObjectConfig {
+        let colors = [Color.BLUE, Color.CYAN, Color.GREEN, Color.PURPLE, Color.RED, Color.YELLOW]
+
+        return {
+            visible: options?.visible ?? true,
+            lineColor: options?.lineColor ?? Color.WHITE,
+            lineWidth: options?.lineWidth ?? 1,
+            fillColor: options?.fillColor ?? Random.fromArray(colors)
+        }
+    }
 
     public constructor (width: number, height: number) {
         super()
@@ -42,10 +66,12 @@ export class Renderer extends EventEmitter<RendererEvents> {
         this.context = context
 
         this.context.lineJoin = 'round'
+
+        this.camera = new Camera(this)
     }
 
     public render(world: World): void {
-        let { canvas, context } = this
+        let { canvas, context, camera } = this
 
         context.globalCompositeOperation = 'source-in'
         context.fillStyle = 'transparent'
@@ -55,13 +81,18 @@ export class Renderer extends EventEmitter<RendererEvents> {
         context.globalCompositeOperation = 'source-over'
 
         context.save()
-        context.translate(.5 * canvas.width, .5 * canvas.height)
-        context.scale(16, 16)
+
+        let cameraScreenX = .5 * canvas.width - camera.transform.position.x
+        let cameraScreenY = .5 * canvas.height - camera.transform.position.y
+
+        context.translate(cameraScreenX, cameraScreenY)
+        context.scale(camera.transform.scale * Renderer.PIXELS_PER_UNIT, camera.transform.scale * Renderer.PIXELS_PER_UNIT)
 
         for (let body of world.bodies) {
             let { rendering, collider, transform } = body
 
             if (!rendering.visible) continue
+            if (!AABB.overlaps(collider.bounds, camera.bounds)) continue
             if (collider instanceof Collider.Circle) {
                 context.beginPath()
                 context.arc(transform.position.x, transform.position.y, collider.radius, 0, FMath.TWO_PI)
@@ -79,14 +110,11 @@ export class Renderer extends EventEmitter<RendererEvents> {
             } else continue
 
             context.fillStyle = rendering.fillColor.toString()
+            context.strokeStyle = rendering.lineColor.toString()
+            context.lineWidth = (1 + FMath.clamp(rendering.lineWidth, 1, 10)) / Renderer.PIXELS_PER_UNIT
+
             context.fill()
-
-            if (rendering.lineColor && rendering.lineWidth) {
-                context.strokeStyle = rendering.lineColor.toString()
-                context.lineWidth = FMath.clamp(rendering.lineWidth, 1, 10)
-
-                context.stroke()
-            }
+            context.stroke()
         }
 
         context.restore()
