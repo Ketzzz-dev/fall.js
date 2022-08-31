@@ -1,5 +1,6 @@
 import { FMath } from '../math'
 
+/** @todo Make this better */
 export class Color {
     public readonly r: number
     public readonly g: number

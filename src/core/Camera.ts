@@ -11,6 +11,7 @@ export class Camera {
     public get bounds(): AABB {
         let { transform: { position, scale }, _renderer: { canvas } } = this
 
+        // this won't get the accurate boundaries
         let left = position.x - .5 * canvas.width
         let right = left + canvas.width
         let top = position.y - .5 * canvas.height

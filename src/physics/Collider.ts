@@ -1,22 +1,23 @@
 import assert from 'assert'
 import { AABB } from '../geometry'
-import { FMath, Transform, Vector } from '../math'
+import { Transform, Vector } from '../math'
 
 export abstract class Collider {
-    public readonly parentTransform: Transform
+    protected readonly _parentTransform: Transform
 
     public abstract get bounds(): AABB
 
     protected constructor (parentTransform: Transform) {
-        this.parentTransform = parentTransform
+        this._parentTransform = parentTransform
     }
 }
+// declaration merging is honestly kind of clean
 export namespace Collider {
     export class Circle extends Collider {
         public readonly radius: number
         
         public get bounds(): AABB {
-            let { position } = this.parentTransform
+            let { position } = this._parentTransform
 
             return new AABB(
                 new Vector(position.x - this.radius, position.y - this.radius),
@@ -36,8 +37,9 @@ export namespace Collider {
         
         private _localVertices: Vector[]
     
+        // transforming the local spaced vertices to the polygon's world space
         public get vertices(): Vector[] {
-            return this._localVertices.map(v => Vector.transform(v, this.parentTransform))
+            return this._localVertices.map(v => Vector.transform(v, this._parentTransform))
         }
         public get bounds(): AABB {
             let minX = Infinity
@@ -58,7 +60,8 @@ export namespace Collider {
         public constructor (parentTransform: Transform, vertices: Vector[]) {
             super(parentTransform)
             
-            assert(vertices.length >= Polygon.MIN_VERTICES && vertices.length <= Polygon.MAX_VERTICES,)
+            // asserting instead of clamping for less trouble
+            assert(vertices.length >= Polygon.MIN_VERTICES && vertices.length <= Polygon.MAX_VERTICES)
             
             this._localVertices = vertices
         }

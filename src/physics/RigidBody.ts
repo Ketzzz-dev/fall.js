@@ -7,6 +7,7 @@ export interface RigidBodyOptions {
     transform: Transform
     collider: Collider
     material: Material
+    area: number
     mass: number
     inertia: number
     isStatic?: boolean
@@ -22,6 +23,7 @@ export class RigidBody {
     public torque = 0   
 
     public readonly material: Material
+    public readonly area: number
 
     public readonly mass: number
     public readonly inverseMass: number
@@ -34,16 +36,18 @@ export class RigidBody {
     public readonly rendering: RenderableObjectConfig
 
     public constructor (options: RigidBodyOptions) {
-        let { transform, collider, rendering, material, mass, inertia, isStatic } = options
+        let { transform, collider, rendering, material, area, isStatic, mass, inertia } = options
 
         this.transform = transform
         this.collider = collider
         this.rendering = Renderer.setConfig(rendering)
 
         this.material = material
+        this.area = area
 
         this.isStatic = isStatic ?? false
 
+        // static checking
         if (this.isStatic) {
             this.mass = 0
             this.inverseMass = 0
@@ -57,10 +61,10 @@ export class RigidBody {
         }
     }
 
-    // public applyImpulse(impulse: Vector, impulsePoint = this.transform.position): void {
-    //     this.linearVelocity = Vector.add(this.linearVelocity, Vector.multiply(this.inverseMass, impulse))
-    //     this.angularVelocity += this.inverseInertia * FMath.cross(impulsePoint, impulse)
-    // }
+    public applyImpulse(impulse: Vector, impulsePoint = this.transform.position): void {
+        this.linearVelocity = Vector.add(this.linearVelocity, Vector.multiply(this.inverseMass, impulse))
+        this.angularVelocity += this.inverseInertia * FMath.cross(impulsePoint, impulse)
+    }
 
     public update(delta: number): void {
         if (this.isStatic) return
@@ -75,11 +79,8 @@ export class RigidBody {
         let { transform } = this
 
         // velocity integration
-        transform.position = Vector.add(this.transform.position, Vector.multiply(this.linearVelocity, delta))
-        transform.orientation += this.angularVelocity * delta
-
-        // limit orientation between 0 and 360 degrees
-        transform.orientation += transform.orientation > FMath.TWO_PI ? FMath.TWO_PI : FMath.TWO_PI
+        transform.translate(Vector.multiply(this.linearVelocity, delta))
+        transform.rotate(this.angularVelocity * delta)
 
         // reset forces
         this.force = Vector.ZERO

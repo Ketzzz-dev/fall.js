@@ -15,6 +15,8 @@ export class Transform {
         this.position = Vector.add(this.position, amount)
     }
 
+    // no scale atm
+
     public rotate(amount: number): void {
         this.orientation += amount
     }

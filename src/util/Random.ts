@@ -1,5 +1,6 @@
 import { FMath } from '../math'
 
+// simple ranged methods
 export namespace Random {
     export function float(min = 0, max = 0): number {
         if (min == max) return min

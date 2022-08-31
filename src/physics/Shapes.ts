@@ -4,6 +4,7 @@ import { Collider } from './Collider'
 import { Material } from './Material'
 import { RigidBody } from './RigidBody'
 
+// I might just merge this with RigidBody
 export namespace Shapes {
     export interface BaseShapeOptions {
         position?: Vector
@@ -36,7 +37,7 @@ export namespace Shapes {
         let transform = new Transform(position, scale, orientation)
 
         return new RigidBody({
-            transform, mass, inertia, material, isStatic,
+            transform, material, area, mass, inertia, isStatic,
             collider: new Collider.Circle(transform, radius), rendering
         })
     }
@@ -62,12 +63,14 @@ export namespace Shapes {
         let transform = new Transform(position, scale, orientation)
 
         return new RigidBody({
-            transform, mass, inertia, material, isStatic,
+            transform, material, area, mass, inertia, isStatic,
             collider: new Collider.Polygon(transform, vertices), rendering
         })
     }
     export function polygon(options: PolygonOptions): RigidBody {
         let { sides, radius, position, scale, orientation, material, isStatic, rendering } = options
+
+        sides = Math.round(sides)
 
         let theta = FMath.TWO_PI / sides
 
@@ -90,7 +93,7 @@ export namespace Shapes {
         let transform = new Transform(position, scale, orientation)
 
         return new RigidBody({
-            transform, mass, inertia, material, isStatic,
+            transform, material, area, mass, inertia, isStatic,
             collider: new Collider.Polygon(transform, vertices), rendering
         })
     }

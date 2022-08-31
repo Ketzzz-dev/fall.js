@@ -22,6 +22,7 @@ export namespace FMath {
         return a.x * b.x + a.y * b.y
     }
 
+    // cross (wedge) product 
     export function cross(scalar: number, vector: Vector): Vector
     export function cross(vector: Vector, scalar: number): Vector
     export function cross(a: Vector, b: Vector): number
@@ -58,6 +59,7 @@ export namespace FMath {
     
     export function fuzzyEquals(a: number, b: number, epsilon?: number): boolean
     export function fuzzyEquals(a: Vector, b: Vector, epsilon?: number): boolean
+    // using this magic number instead of Number.EPSILON
     export function fuzzyEquals(a: Vector | number, b: Vector | number, epsilon = .0001): boolean {
         if (typeof a == 'number' && typeof b == 'number') return Math.abs(a - b) <= epsilon
         else if (typeof a == 'object' && typeof b == 'object') return Math.abs(a.x - b.x) <= epsilon && Math.abs(a.y - b.y) <= epsilon

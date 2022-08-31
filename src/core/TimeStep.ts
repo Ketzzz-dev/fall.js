@@ -7,6 +7,7 @@ export interface TimeStepEvents {
     'stop': []
 }
 
+// not a fixed timestep, but smooth and dynamic
 export class TimeStep extends EventEmitter<TimeStepEvents> {
     public static readonly MIN_DELTA = 1 / 120
     public static readonly MAX_DELTA = 1 / 12
@@ -24,6 +25,7 @@ export class TimeStep extends EventEmitter<TimeStepEvents> {
     private _tick(): void {
         this._frameRequestId = requestAnimationFrame(this._tick.bind(this))
 
+        // better to use seconds instead of ms
         let time = performance.now() / 1000
         let delta = time - this._lastTime
 

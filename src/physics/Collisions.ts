@@ -42,11 +42,11 @@ export namespace Collisions {
     export function projectCircleOnAxis(circleCenter: Vector, circleRadius: number, axis: Vector): ProjectionInfo {
         let pointToEdge = Vector.multiply(axis.normalized, circleRadius)
          
-        let leftSide = Vector.subtract(circleCenter, pointToEdge)
-        let rightSide = Vector.add(circleCenter, pointToEdge)
+        let a = Vector.add(circleCenter, pointToEdge)
+        let b = Vector.subtract(circleCenter, pointToEdge)
 
-        let min = FMath.dot(leftSide, axis)
-        let max = FMath.dot(rightSide, axis)
+        let min = FMath.dot(a, axis)
+        let max = FMath.dot(b, axis)
 
         if (min > max) [min, max] = [max, min]
 

@@ -1,4 +1,6 @@
 import EventEmitter from 'eventemitter3'
+import { Renderer } from './Renderer'
+import { World } from '../physics'
 import { TimeStep } from './TimeStep'
 
 export interface EngineEvents {
@@ -7,7 +9,7 @@ export interface EngineEvents {
     'render': []
 }
 export interface EngineOptions {
-    tickRate: number,
+    iterations?: number
     renderer: {
         width: number
         height: number
@@ -16,10 +18,10 @@ export interface EngineOptions {
 
 export class Engine extends EventEmitter<EngineEvents> {
     public readonly timestep = new TimeStep()
-    // public readonly world: World
-    // public readonly renderer: Renderer
+    public readonly world: World
+    public readonly renderer: Renderer
 
-    public readonly tickRate: number
+    public readonly iterations: number
     public readonly delta: number
 
     public accumulator = 0
@@ -27,13 +29,14 @@ export class Engine extends EventEmitter<EngineEvents> {
     public constructor (options: EngineOptions) {
         super()
 
-        let { renderer, tickRate } = options
+        let { renderer, iterations } = options
 
-        // this.world = new World()
-        // this.renderer = new Renderer()
+        this.world = new World()
+        this.renderer = new Renderer(renderer.width, renderer.height)
 
-        this.tickRate = tickRate
-        this.delta = 1 / this.tickRate
+        // 100 iterations is precise and performant enough
+        this.iterations = iterations ?? 100
+        this.delta = 1 / this.iterations
 
         this._initialize()
 
@@ -42,22 +45,22 @@ export class Engine extends EventEmitter<EngineEvents> {
 
     private _initialize(): void {
         this.timestep.on('tick', this._tick.bind(this))
-        this.timestep.start()
+
+        this.emit('initialize')
     }
 
     private _tick(delta: number): void {
         this.accumulator += delta
 
+        // fixed timestep implementation
         if (this.accumulator > 1) this.accumulator = 1
 
         while (this.accumulator > this.delta) {
-            // this.world.update(delta)
-            this.emit('update', this.delta)
+            this.world.update(this.delta)
 
             this.accumulator -= this.delta
         }
 
-        // this.renderer.render()
-        this.emit('render')
+        this.renderer.render(this.world)
     }
 }

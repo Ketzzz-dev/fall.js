@@ -2,13 +2,6 @@ import { FMath } from './FMath'
 import { Transform } from './Transform'
 
 export class Vector {
-    public static readonly ZERO = new Vector(0, 0)
-    public static readonly ONE = new Vector(1, 1)
-    public static readonly LEFT = new Vector(-1, 0)
-    public static readonly RIGHT = new Vector(1, 0)
-    public static readonly UP = new Vector(0, -1)
-    public static readonly DOWN = new Vector(0, 1)
-
     public static add(a: Vector, b: Vector): Vector {
         return new Vector(a.x + b.x, a.y + b.y)
     }
@@ -71,4 +64,13 @@ export class Vector {
     public toString(): string {
         return `x: ${this.x}, y: ${this.y}`
     }
+}
+// this, honestly is a lot cleaner than static reeadonly properties
+export namespace Vector {
+    export const ZERO = new Vector(0, 0)
+    export const ONE = new Vector(1, 1)
+    export const LEFT = new Vector(-1, 0)
+    export const RIGHT = new Vector(1, 0)
+    export const UP = new Vector(0, -1)
+    export const DOWN = new Vector(0, 1)
 }

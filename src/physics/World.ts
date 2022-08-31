@@ -1,3 +1,4 @@
+import EventEmitter from 'eventemitter3'
 import { AABB } from '../geometry'
 import { Vector, FMath } from '../math'
 import { Pair } from '../util/Types'
@@ -5,7 +6,11 @@ import { CollisionManifold } from './CollisionManifold'
 import { Collisions } from './Collisions'
 import { RigidBody } from './RigidBody'
 
-export class World {
+export interface WorldEvents {
+    
+}
+
+export class World extends EventEmitter<WorldEvents> {
     private _bodies = [] as RigidBody[]
     private _collisionPairs = [] as Pair<RigidBody>[]
     
@@ -13,35 +18,6 @@ export class World {
 
     public get bodies(): readonly RigidBody[] {
         return this._bodies
-    }
-
-    private _updateBodies(delta: number): void {
-        for (let body of  this._bodies) {
-            if (body.isStatic) continue
-
-            body.force = Vector.add(body.force, Vector.multiply(body.mass, this._gravity))
-
-            body.update(delta)
-        }
-    }
-
-    private _broadPhase(): void {
-        this._collisionPairs = []
-
-        for (let a of this._bodies) {
-            for (let b of this._bodies) {
-                if (a == b) break
-                if (a.isStatic && b.isStatic) continue
-                if (AABB.overlaps(a.collider.bounds, b.collider.bounds)) this._collisionPairs.push([a, b])
-            }
-        }
-    }
-    private _narrowPhase(): void {
-        for (let [a, b] of this._collisionPairs) {
-            let manifold = new CollisionManifold(a, b)
-
-            if (Collisions.solve(manifold)) this.resolveCollision(manifold)
-        }
     }
     
     public addBody(body: RigidBody): void {
@@ -57,10 +33,32 @@ export class World {
         return true
     }
 
-    public update(delta: number): void {        
-        this._updateBodies(delta) 
-        this._broadPhase()
-        this._narrowPhase()
+    public update(delta: number): void { 
+        // stepping       
+        for (let body of  this._bodies) {
+            if (body.isStatic) continue
+
+            body.force = Vector.add(body.force, Vector.multiply(body.mass, this._gravity))
+
+            body.update(delta)
+        }
+
+        // broadphase
+        this._collisionPairs = []
+
+        for (let a of this._bodies) {
+            for (let b of this._bodies) {
+                if (a == b) break
+                if (a.isStatic && b.isStatic) continue
+                if (AABB.overlaps(a.collider.bounds, b.collider.bounds)) this._collisionPairs.push([a, b])
+            }
+        }
+        // narrowphase
+        for (let [a, b] of this._collisionPairs) {
+            let manifold = new CollisionManifold(a, b)
+
+            if (Collisions.solve(manifold)) this.resolveCollision(manifold)
+        }
     }
 
     public resolveCollision(manifold: CollisionManifold): void {
@@ -99,14 +97,36 @@ export class World {
 
             let normalImpulse = Vector.multiply(normal, jn)
 
-            if (!a.isStatic) {
-                a.linearVelocity = Vector.subtract(a.linearVelocity, Vector.multiply(a.inverseMass, normalImpulse))
-                a.angularVelocity -= a.inverseInertia * FMath.cross(centerMassA, normalImpulse)
-            }
-            if (!b.isStatic) {
-                b.linearVelocity = Vector.add(b.linearVelocity, Vector.multiply(b.inverseMass, normalImpulse))
-                b.angularVelocity += b.inverseInertia * FMath.cross(centerMassB, normalImpulse)
-            }
+            if (!a.isStatic) a.applyImpulse(normalImpulse.negative, centerMassA)
+            if (!b.isStatic) b.applyImpulse(normalImpulse, centerMassB)
+
+            fullVelocityA = Vector.add(a.linearVelocity, FMath.cross(a.angularVelocity, centerMassA))
+            fullVelocityB = Vector.add(b.linearVelocity, FMath.cross(b.angularVelocity, centerMassB))
+
+            relativeVelocity = Vector.subtract(fullVelocityB, fullVelocityA)
+
+            let tangent = Vector.subtract(relativeVelocity, Vector.multiply(normal, FMath.dot(relativeVelocity, normal))).normalized
+
+            let jt = -FMath.dot(relativeVelocity, tangent) / invMsIn
+
+            jt /= points.length
+
+            if (FMath.fuzzyEquals(jt, 0)) return
+
+            let staticFriction = Math.sqrt(a.material.staticFriction * a.material.staticFriction + b.material.staticFriction * b.material.staticFriction)
+
+            let tangentImpulse: Vector
+            
+            if (Math.abs(jt) < jn * staticFriction) {
+                tangentImpulse = Vector.multiply(tangent, jt)
+            } else {
+                let dynamicFriction = Math.sqrt(a.material.dynamicFriction * a.material.dynamicFriction + b.material.dynamicFriction * b.material.dynamicFriction)
+
+                tangentImpulse = Vector.multiply(tangent, -jn * dynamicFriction)
+            } 
+
+            if (!a.isStatic) a.applyImpulse(tangentImpulse.negative, centerMassA)
+            if (!b.isStatic) b.applyImpulse(tangentImpulse, centerMassB)
         }
     }
 }

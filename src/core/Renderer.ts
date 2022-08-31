@@ -7,6 +7,7 @@ import { Color } from '../util/Color'
 import { Random } from '../util/Random'
 import { Camera } from './Camera'
 
+// might make this a little better and customisable
 export interface RenderingOptions {
     visible?: boolean
     lineColor?: Color
@@ -20,6 +21,7 @@ export interface RenderableObjectConfig {
     fillColor: Color
 }
 
+/** @todo Add events */
 export interface RendererEvents {
     
 }
@@ -93,21 +95,29 @@ export class Renderer extends EventEmitter<RendererEvents> {
 
             if (!rendering.visible) continue
             if (!AABB.overlaps(collider.bounds, camera.bounds)) continue
+
+            context.beginPath()
+
             if (collider instanceof Collider.Circle) {
-                context.beginPath()
                 context.arc(transform.position.x, transform.position.y, collider.radius, 0, FMath.TWO_PI)
-                context.closePath()
             } else if (collider instanceof Collider.Polygon) {
-                context.beginPath()
             
                 context.moveTo(collider.vertices[0].x, collider.vertices[0].y)
         
                 for (let vertex of collider.vertices) {
                     context.lineTo(vertex.x, vertex.y)
                 }
-        
-                context.closePath()
+    
             } else continue
+
+            context.closePath()
+            
+            context.moveTo(transform.position.x, transform.position.y)
+
+            let dir = Vector.add(FMath.rotate(Vector.RIGHT, transform.orientation), transform.position)
+
+            context.lineTo(dir.x, dir.y)
+
 
             context.fillStyle = rendering.fillColor.toString()
             context.strokeStyle = rendering.lineColor.toString()
