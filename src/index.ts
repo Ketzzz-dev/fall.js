@@ -1,14 +1,9 @@
-import { Engine } from './core'
-import { Renderer } from './core/Renderer'
+import { Engine, Renderer } from './core'
 import { FMath, Vector } from './math'
-import { RigidBody } from './physics'
-import { Material } from './physics/Material'
-import { Shapes } from './physics/Shapes'
-import { World } from './physics/World'
-import { Color } from './util/Color'
-import { Random } from './util/Random'
+import { World, Shapes, Material, RigidBody } from './physics'
+import { Color, Random } from './util'
 
-const ENGINE = new Engine({ tickRate: 120, renderer: { width: 0, height: 0 } })
+const ENGINE = new Engine({ tickRate: 90, renderer: { width: 0, height: 0 } })
 const WORLD = new World
 const RENDERER = new Renderer(innerWidth, innerHeight)
 
@@ -27,7 +22,7 @@ let ground = Shapes.rectangle({
 
 WORLD.addBody(ground)
 
-for (let i = 0; i < 20; i++) {
+for (let i = 0; i < 100; i++) {
     let x = Random.float(min.x + padding.x * 2, max.x - padding.x * 2)
     let y = Random.float(min.y + padding.y, -padding.y * 2)
     let orientation = Random.float(0, FMath.TWO_PI)
@@ -35,7 +30,7 @@ for (let i = 0; i < 20; i++) {
 
     let body: RigidBody
 
-    if (Random.boolean()) {
+    if (Random.boolean(0)) {
         let radius = Random.float(1.2, 1.8)
 
         body = Shapes.circle({
@@ -63,16 +58,8 @@ for (let i = 0; i < 20; i++) {
     WORLD.addBody(body)
 }
 
-let fps = 0
-
 ENGINE.on('update', (delta) => {
     WORLD.update(delta)
-
-    let total = 0
-
-    for (let d of ENGINE.timestep.deltaHistory) total += d
-
-    fps = ENGINE.timestep.deltaHistory.length / total
 }).on('render', () => {
     RENDERER.render(WORLD)
 })

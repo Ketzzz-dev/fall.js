@@ -1,5 +1,5 @@
 import { Vector } from '../math'
-import { Pair } from '../util'
+import { Pair } from '../util/Types'
 import { RigidBody } from './RigidBody'
 
 export class CollisionManifold {
@@ -10,6 +10,6 @@ export class CollisionManifold {
     public depth = 0
 
     public constructor (bodyA: RigidBody, bodyB: RigidBody) {
-        this.bodies = new Pair(bodyA, bodyB)
+        this.bodies = [bodyA, bodyB]
     }
 }

@@ -1,17 +1,47 @@
 import { AABB } from '../geometry'
 import { Vector, FMath } from '../math'
+import { Pair } from '../util/Types'
 import { CollisionManifold } from './CollisionManifold'
 import { Collisions } from './Collisions'
 import { RigidBody } from './RigidBody'
 
 export class World {
     private _bodies = [] as RigidBody[]
-    private _collisions = [] as CollisionManifold[]
+    private _collisionPairs = [] as Pair<RigidBody>[]
     
     private _gravity = new Vector(0, 9.81)
 
     public get bodies(): readonly RigidBody[] {
         return this._bodies
+    }
+
+    private _updateBodies(delta: number): void {
+        for (let body of  this._bodies) {
+            if (body.isStatic) continue
+
+            body.force = Vector.add(body.force, Vector.multiply(body.mass, this._gravity))
+
+            body.update(delta)
+        }
+    }
+
+    private _broadPhase(): void {
+        this._collisionPairs = []
+
+        for (let a of this._bodies) {
+            for (let b of this._bodies) {
+                if (a == b) break
+                if (a.isStatic && b.isStatic) continue
+                if (AABB.overlaps(a.collider.bounds, b.collider.bounds)) this._collisionPairs.push([a, b])
+            }
+        }
+    }
+    private _narrowPhase(): void {
+        for (let [a, b] of this._collisionPairs) {
+            let manifold = new CollisionManifold(a, b)
+
+            if (Collisions.solve(manifold)) this.resolveCollision(manifold)
+        }
     }
     
     public addBody(body: RigidBody): void {
@@ -28,32 +58,13 @@ export class World {
     }
 
     public update(delta: number): void {        
-        for (let body of  this._bodies) {
-            if (body.isStatic) continue
-
-            body.force = Vector.add(body.force, Vector.multiply(body.mass, this._gravity))
-
-            body.update(delta)
-        }
-
-        this._collisions = []
-        
-        for (let bodyA of this._bodies) {
-            for (let bodyB of this._bodies) {
-                if (bodyA == bodyB) break
-                if (bodyA.isStatic && bodyB.isStatic) continue
-                if (!AABB.overlaps(bodyA.collider.bounds, bodyB.collider.bounds)) continue
-
-                let manifold = new CollisionManifold(bodyA, bodyB)
-
-                if (Collisions.solve(manifold)) this._collisions.push(manifold)
-            }
-        }
-        for (let collision of this._collisions) this.resolveCollision(collision) 
+        this._updateBodies(delta) 
+        this._broadPhase()
+        this._narrowPhase()
     }
 
     public resolveCollision(manifold: CollisionManifold): void {
-        let { bodies: { a, b }, depth, normal, points } = manifold
+        let { bodies: [a, b], depth, normal, points } = manifold
 
         let transformA = a.transform
         let transformB = b.transform

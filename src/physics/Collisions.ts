@@ -4,7 +4,7 @@ import { CollisionManifold } from './CollisionManifold'
 
 export namespace Collisions {
     export function solve(manifold: CollisionManifold): boolean {
-        let { a: bodyA, b: bodyB } = manifold.bodies
+        let [bodyA, bodyB] = manifold.bodies
 
         if (bodyA.collider instanceof Collider.Circle) {
             if (bodyB.collider instanceof Collider.Circle) {

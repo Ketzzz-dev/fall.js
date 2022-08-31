@@ -7,17 +7,18 @@ export class Camera {
     
     public transform: Transform
 
+    /** @todo Fix this damnit */
     public get bounds(): AABB {
-        let { canvas } = this._renderer
+        let { transform: { position, scale }, _renderer: { canvas } } = this
 
-        let left = this.transform.position.x - .5 * canvas.width
+        let left = position.x - .5 * canvas.width
         let right = left + canvas.width
-        let top = this.transform.position.y - .5 * canvas.height
+        let top = position.y - .5 * canvas.height
         let bottom = top + canvas.height
 
         return new AABB(
-            new Vector(left / this.transform.scale / Renderer.PIXELS_PER_UNIT, top / this.transform.scale / Renderer.PIXELS_PER_UNIT),
-            new Vector(right / this.transform.scale / Renderer.PIXELS_PER_UNIT, bottom / this.transform.scale / Renderer.PIXELS_PER_UNIT)
+            new Vector(left / scale / Renderer.PIXELS_PER_UNIT, top / scale / Renderer.PIXELS_PER_UNIT),
+            new Vector(right / scale / Renderer.PIXELS_PER_UNIT, bottom / scale / Renderer.PIXELS_PER_UNIT)
         )
     }
 

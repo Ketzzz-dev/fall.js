@@ -9,6 +9,10 @@
       "default": "./dist/core",
       "types": "./types/core.d.ts"
     },
+    "./geometry": {
+      "default": "./dist/geometry",
+      "types": "./types/geometry.d.ts"
+    },
     "./math": {
       "default": "./dist/math",
       "types": "./types/math.d.ts"

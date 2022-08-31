@@ -82,8 +82,8 @@ export class Renderer extends EventEmitter<RendererEvents> {
 
         context.save()
 
-        let cameraScreenX = .5 * canvas.width - camera.transform.position.x
-        let cameraScreenY = .5 * canvas.height - camera.transform.position.y
+        let cameraScreenX = .5 * canvas.width - camera.transform.position.x * Renderer.PIXELS_PER_UNIT
+        let cameraScreenY = .5 * canvas.height - camera.transform.position.y * Renderer.PIXELS_PER_UNIT
 
         context.translate(cameraScreenX, cameraScreenY)
         context.scale(camera.transform.scale * Renderer.PIXELS_PER_UNIT, camera.transform.scale * Renderer.PIXELS_PER_UNIT)
