@@ -1,66 +1,49 @@
 import EventEmitter from 'eventemitter3'
-import { Renderer } from './Renderer'
-import { World } from '../physics'
-import { TimeStep } from './TimeStep'
 
 export interface EngineEvents {
-    'initialize': []
-    'update': [delta: number]
-    'render': []
-}
-export interface EngineOptions {
-    iterations?: number
-    renderer: {
-        width: number
-        height: number
-    }
+	'run': []
+	'stop': []
+	'update': [deltaTime: number]
+	'render': []
 }
 
 export class Engine extends EventEmitter<EngineEvents> {
-    public readonly timestep = new TimeStep()
-    public readonly world: World
-    public readonly renderer: Renderer
+	public readonly fixedDeltaTime = 1 / 120
 
-    public readonly iterations: number
-    public readonly delta: number
+	private frameId!: number
+	private lastTime!: number
 
-    public accumulator = 0
+	private running = false
+	private accumulatedTime = 0
 
-    public constructor (options: EngineOptions) {
-        super()
+	public run(): void {
+		if (this.running) return
 
-        let { renderer, iterations } = options
+		this.lastTime = performance.now() * .001
+		this.frameId = requestAnimationFrame(this.tick.bind(this))
+	}
 
-        this.world = new World()
-        this.renderer = new Renderer(renderer.width, renderer.height)
+	public stop(): void {
+		if (!this.running) return
 
-        // 100 iterations is precise and performant enough
-        this.iterations = iterations ?? 100
-        this.delta = 1 / this.iterations
+		cancelAnimationFrame(this.frameId)
+	}
 
-        this._initialize()
+	private tick(): void {
+		const now = performance.now() * .001
+		const deltaTime = now - this.lastTime
 
-        onload = () => this.timestep.start()
-    }
+		this.lastTime = now
+		this.accumulatedTime += deltaTime
 
-    private _initialize(): void {
-        this.timestep.on('tick', this._tick.bind(this))
+		while (this.accumulatedTime > this.fixedDeltaTime) {
+			this.emit('update', this.fixedDeltaTime)
 
-        this.emit('initialize')
-    }
+			this.accumulatedTime -= this.fixedDeltaTime
+		}
 
-    private _tick(delta: number): void {
-        this.accumulator += delta
+		this.emit('render')
 
-        // fixed timestep implementation
-        if (this.accumulator > 1) this.accumulator = 1
-
-        while (this.accumulator > this.delta) {
-            this.world.update(this.delta)
-
-            this.accumulator -= this.delta
-        }
-
-        this.renderer.render(this.world)
-    }
+		this.frameId = requestAnimationFrame(this.tick.bind(this))
+	}
 }

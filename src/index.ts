@@ -1,42 +1,105 @@
-import { Engine,} from './core'
-import { Vector } from './math'
-import { Shapes, Material } from './physics'
-import { Color } from './util'
+import { Engine } from './Core/Engine'
+import { Body } from './Physics/Body'
+import { Collider } from './Physics/Collider'
+import { Material } from './Physics/Material'
+import { Transform } from './Physics/Transform'
+import { World } from './Physics/World'
+import { Vector2 } from './Math/Vector2'
 
-const ENGINE = new Engine({ iterations: 100, renderer: { width: innerWidth, height: innerHeight } })
+import Polygon = Collider.Polygon
+import Circle = Collider.Circle
+import Capsule = Collider.Capsule
 
-document.getElementById('main')?.append(ENGINE.renderer.canvas)
+const PIXELS_PER_METER = 32
 
-ENGINE.renderer.canvas.style.backgroundColor = Color.BLACK.toString()
+const engine = new Engine()
+const world = new World()
 
-let { min, max } = ENGINE.renderer.camera.bounds
-let padding = Vector.multiply(.1, Vector.subtract(max, min))
+const canvas = document.createElement('canvas')
 
-let ground = Shapes.rectangle({
-    position: new Vector(0, max.y - padding.y),
-    material: Material.DEFAULT, width: max.x - min.x - padding.x, height: 3, isStatic: true,
-    rendering: { fillColor: Color.GREEN }
-})
+document.getElementById('main')?.append(canvas)
 
-ENGINE.world.addBody(ground)
+canvas.width = 800
+canvas.height = 600
 
-let start = new Vector(0, max.y - padding.y * 1.5)
-let step = new Vector(0, 4)
-let size = new Vector(1, 6)
+canvas.style.backgroundColor = '#09080d'
 
-for (let x = 0; x < size.x; x++) {
-    for (let y = 0; y < size.y; y++) {
-        let position = Vector.add(new Vector(x * step.x, -y * step.y), start)
+const context = canvas.getContext('2d')!
 
-        let body = Shapes.polygon({
-            position, radius: 1.5, sides: 6, material: Material.DEFAULT
-        })
+context.lineJoin = 'round'
+context.lineWidth = 2 / PIXELS_PER_METER
 
+const ground = new Body(new Transform(new Vector2(0, 8)), Polygon.rectangle(23, 1), Material.DEFAULT, true)
 
-        ENGINE.world.addBody(body)
-    }
+world.addBodies(ground)
+
+for (let i = 0; i < 25; i++) {
+	const body = new Body(new Transform(new Vector2(Math.random() * 10 - 5, Math.random() * -5), Math.random() * Math.PI * 2), Polygon.regular(.75,3), Material.DEFAULT)
+
+	console.log(body.mass, body.inertia)
+
+	world.addBodies(body)
 }
 
-console.dir(ENGINE)
+engine.on('update', (deltaTime) => {
+	world.update(deltaTime)
+}).on('render', () => {
+	context.globalCompositeOperation = 'source-in'
+	context.fillStyle = 'transparent'
 
-export {}
+	context.fillRect(0, 0, canvas.width, canvas.height)
+
+	context.globalCompositeOperation = 'source-over'
+
+	context.save()
+	context.translate(.5 * canvas.width, .5 * canvas.height)
+	context.scale(PIXELS_PER_METER, PIXELS_PER_METER)
+
+	context.strokeStyle = 'white'
+	context.fillStyle = 'white'
+
+	for (const body of world.getBodies()) {
+
+		context.beginPath()
+
+		if (body.collider instanceof Circle) {
+			context.arc(body.transform.position.x, body.transform.position.y, body.collider.radius, 0, Math.PI * 2)
+			context.moveTo(body.transform.position.x, body.transform.position.y)
+
+			const end = Vector2.transform(body.transform, Vector2.multiply(Vector2.RIGHT, body.collider.radius))
+
+			context.lineTo(end.x, end.y)
+		} else if (body.collider instanceof Polygon) {
+			const vertices = body.collider.getTransformedVertices(body.transform)
+
+			context.moveTo(vertices[0].x, vertices[0].y)
+
+			for (let vertex of vertices) {
+				context.lineTo(vertex.x, vertex.y)
+			}
+		} else if (body.collider instanceof Capsule) {
+			const [start, end] = body.collider.getTransformedEdge(body.transform)
+
+			context.arc(start.x, start.y, body.collider.radius, body.transform.rotation, body.transform.rotation + Math.PI)
+			context.arc(end.x, end.y, body.collider.radius, body.transform.rotation + Math.PI, body.transform.rotation)
+		}
+
+		context.closePath()
+		context.stroke()
+	}
+
+	// context.strokeStyle = 'red'
+	//
+	// for (const { normal, penetration, contactPoints } of world.collisions) {
+	// 	const correction = Vector2.multiply(normal, penetration * PIXELS_PER_METER)
+	//
+	// 	for (const point of contactPoints) {
+	// 		context.beginPath()
+	// 		context.arc(point.x, point.y, 1 / PIXELS_PER_METER, 0, Math.PI * 2)
+	// 		context.closePath()
+	// 		context.stroke()
+	// 	}
+	// }
+
+	context.restore()
+}).run()

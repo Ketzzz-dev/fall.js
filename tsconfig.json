@@ -1,6 +1,8 @@
 {
     "compilerOptions": {
-        "lib": ["DOM"],
+        "lib": [
+            "DOM"
+        ],
         "target": "ESNext",
         "module": "CommonJS",
         "moduleResolution": "Node",
@@ -17,5 +19,7 @@
         "isolatedModules": true,
         "experimentalDecorators": true
     },
-    "include": ["./src/**/*"]
+    "include": [
+        "./src/**/*"
+    ]
 }
