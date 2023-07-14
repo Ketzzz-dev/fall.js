@@ -1,132 +1,138 @@
-import EventEmitter from 'eventemitter3'
-import { AABB } from '../geometry'
-import { Vector, FMath } from '../math'
-import { Pair } from '../util/Types'
-import { CollisionManifold } from './CollisionManifold'
+import { Vector2 } from '../Math/Vector2'
+import { Body } from './Body'
+import { BoundingBox } from './BoundingBox'
 import { Collisions } from './Collisions'
-import { RigidBody } from './RigidBody'
+import CollisionInfo = Collisions.CollisionInfo
 
-export interface WorldEvents {
-    
-}
+export class World {
+	private bodies: Body[] = []
 
-export class World extends EventEmitter<WorldEvents> {
-    private _bodies = [] as RigidBody[]
-    private _collisionPairs = [] as Pair<RigidBody>[]
-    
-    private _gravity = new Vector(0, 9.81)
+	public collisions: CollisionInfo[] = []
 
-    public get bodies(): readonly RigidBody[] {
-        return this._bodies
-    }
-    
-    public addBody(body: RigidBody): void {
-        this._bodies.push(body)
-    }
-    public deleteBody(body: RigidBody): boolean {
-        let i = this._bodies.indexOf(body)
+	public constructor(
+		private readonly gravity = new Vector2(0, 9.81),
+		private readonly slop = .0041,
+		private readonly percent = .67
+	) {
+	}
 
-        if (i < 0) return false
+	public addBodies(...bodies: Body[]): void {
+		this.bodies.push(...bodies)
+	}
 
-        this._bodies = this._bodies.splice(i, 1)
+	public removeBodies(...bodies: Body[]): void {
+		for (const body of bodies) {
+			const i = this.bodies.indexOf(body)
 
-        return true
-    }
+			if (i > 0) this.bodies.splice(i, 1)
+		}
+	}
 
-    public update(delta: number): void { 
-        // stepping       
-        for (let body of  this._bodies) {
-            if (body.isStatic) continue
+	public getBodies(): readonly Body[] {
+		return this.bodies
+	}
 
-            body.force = Vector.add(body.force, Vector.multiply(body.mass, this._gravity))
+	public update(deltaTime: number): void {
+		const pairs = [] as [Body, Body][]
 
-            body.update(delta)
-        }
+		this.collisions = []
 
-        // broadphase
-        this._collisionPairs = []
+		for (let i = 0; i < this.bodies.length; i++) {
+			const bodyA = this.bodies[i]
 
-        for (let a of this._bodies) {
-            for (let b of this._bodies) {
-                if (a == b) break
-                if (a.isStatic && b.isStatic) continue
-                if (AABB.overlaps(a.collider.bounds, b.collider.bounds)) this._collisionPairs.push([a, b])
-            }
-        }
-        // narrowphase
-        for (let [a, b] of this._collisionPairs) {
-            let manifold = new CollisionManifold(a, b)
+			for (let j = i + 1; j < this.bodies.length; j++) {
+				const bodyB = this.bodies[j]
 
-            if (Collisions.solve(manifold)) this.resolveCollision(manifold)
-        }
-    }
+				if (bodyA.isStatic && bodyB.isStatic) continue
+				if (BoundingBox.intersects(bodyA.collider.getBoundingBox(bodyA.transform), bodyB.collider.getBoundingBox(bodyB.transform)))
+					pairs.push([bodyA, bodyB])
+			}
+		}
+		for (const [bodyA, bodyB] of pairs) {
+			const collisionInfo = Collisions.testCollision(bodyA, bodyB)
 
-    public resolveCollision(manifold: CollisionManifold): void {
-        let { bodies: [a, b], depth, normal, points } = manifold
+			if (collisionInfo) this.resolveCollision(bodyA, bodyB, collisionInfo), this.collisions.push(collisionInfo)
+		}
+		for (const body of this.bodies) {
+			body.applyForce(Vector2.multiply(this.gravity, body.mass))
+			body.update(deltaTime)
+		}
+	}
+	public resolveCollision(bodyA: Body, bodyB: Body, collisionInfo: CollisionInfo): void {
+		const { penetration, contactPoints, normal } = collisionInfo
 
-        let transformA = a.transform
-        let transformB = b.transform
+		const totalInverseMass = bodyA.inverseMass + bodyB.inverseMass
+		const correction = Vector2.multiply(
+			Vector2.multiply(normal, this.percent),
+			(Math.max(penetration - this.slop, 0) / totalInverseMass)
+		)
+		// const correction = Vector2.multiply(normal, penetration)
 
-        let totalInverseMass = a.inverseMass + b.inverseMass
-        let correction = Vector.multiply(normal, depth / totalInverseMass)
+		if (!bodyA.isStatic)
+			bodyA.transform.position = Vector2.subtract(bodyA.transform.position, Vector2.multiply(correction, bodyA.inverseMass))
+		if (!bodyB.isStatic)
+			bodyB.transform.position = Vector2.add(bodyB.transform.position, Vector2.multiply(correction, bodyB.inverseMass))
 
-        if (!a.isStatic) transformA.position = Vector.subtract(a.transform.position, Vector.multiply(correction, a.inverseMass))
-        if (!b.isStatic) transformB.position = Vector.add(b.transform.position, Vector.multiply(correction, b.inverseMass))
+		const restitution = .5 * (bodyA.material.restitution + bodyB.material.restitution)
+		const staticFriction = .5 * (bodyA.material.staticFriction + bodyB.material.staticFriction)
+		const dynamicFriction = .5 * (bodyA.material.dynamicFriction + bodyB.material.dynamicFriction)
+		const impulseInfos = [] as { impulse: Vector2, radiusA: Vector2, radiusB: Vector2 }[]
 
-        for (let point of points) {
-            let centerMassA = Vector.subtract(point, transformA.position)
-            let centerMassB = Vector.subtract(point, transformB.position)
+		for (const contactPoint of contactPoints) {
+			const radiusA = Vector2.subtract(contactPoint, bodyA.transform.position)
+			const radiusB = Vector2.subtract(contactPoint, bodyB.transform.position)
 
-            let fullVelocityA = Vector.add(a.linearVelocity, FMath.cross(a.angularVelocity, centerMassA))
-            let fullVelocityB = Vector.add(b.linearVelocity, FMath.cross(b.angularVelocity, centerMassB))
+			const perpendicularRadiusA = radiusA.perpendicular
+			const perpendicularRadiusB = radiusB.perpendicular
 
-            let relativeVelocity = Vector.subtract(fullVelocityB, fullVelocityA)
-            let contactVelocity = FMath.dot(relativeVelocity, normal)
+			const rotationalVelocityA = Vector2.multiply(perpendicularRadiusA, bodyA.rotationalVelocity)
+			const rotationalVelocityB = Vector2.multiply(perpendicularRadiusB, bodyB.rotationalVelocity)
 
-            if (contactVelocity > 0) return
+			const fullVelocityA = Vector2.add(bodyA.linearVelocity, rotationalVelocityA)
+			const fullVelocityB = Vector2.add(bodyB.linearVelocity, rotationalVelocityB)
 
-            let raxn = FMath.cross(centerMassA, normal)
-            let rbxn = FMath.cross(centerMassB, normal)
-            let invMsIn = totalInverseMass + raxn * raxn * a.inverseInertia + rbxn * rbxn * b.inverseInertia
+			const relativeVelocity = Vector2.subtract(fullVelocityB, fullVelocityA)
+			const contactVelocity = Vector2.dot(relativeVelocity, normal)
 
-            let restitution = .5 * (a.material.restitution + b.material.restitution)
+			if (contactVelocity > 0) continue
 
-            let jn = -(1 + restitution) * contactVelocity / invMsIn
+			// idfk what to call these
+			const dotA = Vector2.dot(perpendicularRadiusA, normal)
+			const dotB = Vector2.dot(perpendicularRadiusB, normal)
+			const inertiaSum = dotA * dotA * bodyA.inverseInertia + dotB * dotB * bodyB.inverseInertia
 
-            jn /= points.length
+			let normalImpulseScalar = -(1 + restitution) * contactVelocity / (totalInverseMass + inertiaSum)
 
-            let normalImpulse = Vector.multiply(normal, jn)
+			normalImpulseScalar /= contactPoints.length
 
-            if (!a.isStatic) a.applyImpulse(normalImpulse.negative, centerMassA)
-            if (!b.isStatic) b.applyImpulse(normalImpulse, centerMassB)
+			const normalImpulse = Vector2.multiply(normal, normalImpulseScalar)
 
-            fullVelocityA = Vector.add(a.linearVelocity, FMath.cross(a.angularVelocity, centerMassA))
-            fullVelocityB = Vector.add(b.linearVelocity, FMath.cross(b.angularVelocity, centerMassB))
+			impulseInfos.push({ impulse: normalImpulse, radiusA, radiusB })
 
-            relativeVelocity = Vector.subtract(fullVelocityB, fullVelocityA)
+			let tangent = Vector2.subtract(relativeVelocity, Vector2.multiply(normal, Vector2.dot(relativeVelocity, normal)))
 
-            let tangent = Vector.subtract(relativeVelocity, Vector.multiply(normal, FMath.dot(relativeVelocity, normal))).normalized
+			if (!Vector2.fuzzyEquals(tangent, Vector2.ZERO)) tangent = Vector2.normalize(tangent)
+			else continue
 
-            let jt = -FMath.dot(relativeVelocity, tangent) / invMsIn
+			let tangentImpulseScalar = -Vector2.dot(relativeVelocity, tangent) / (totalInverseMass + inertiaSum)
 
-            jt /= points.length
+			tangentImpulseScalar /= contactPoints.length
 
-            if (FMath.fuzzyEquals(jt, 0)) return
+			let tangentImpulse: Vector2
 
-            let staticFriction = Math.sqrt(a.material.staticFriction * a.material.staticFriction + b.material.staticFriction * b.material.staticFriction)
+			if (Math.abs(tangentImpulseScalar) <= normalImpulseScalar * staticFriction) {
+				tangentImpulse = Vector2.multiply(tangent, tangentImpulseScalar)
+			} else {
+				tangentImpulse = Vector2.multiply(tangent, -normalImpulseScalar * dynamicFriction)
+			}
 
-            let tangentImpulse: Vector
-            
-            if (Math.abs(jt) < jn * staticFriction) {
-                tangentImpulse = Vector.multiply(tangent, jt)
-            } else {
-                let dynamicFriction = Math.sqrt(a.material.dynamicFriction * a.material.dynamicFriction + b.material.dynamicFriction * b.material.dynamicFriction)
+			impulseInfos.push({ impulse: tangentImpulse, radiusA, radiusB })
+		}
+		for (const { impulse, radiusA, radiusB } of impulseInfos) {
+			// console.log(impulse.magnitude)
 
-                tangentImpulse = Vector.multiply(tangent, -jn * dynamicFriction)
-            } 
-
-            if (!a.isStatic) a.applyImpulse(tangentImpulse.negative, centerMassA)
-            if (!b.isStatic) b.applyImpulse(tangentImpulse, centerMassB)
-        }
-    }
+			bodyA.applyImpulse(impulse.negative, radiusA)
+			bodyB.applyImpulse(impulse, radiusB)
+		}
+	}
 }

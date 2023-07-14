@@ -1,291 +1,358 @@
-import { FMath, Transform, Vector } from '../math'
+import { Common } from '../Math/Common'
+import { Body } from './Body'
+import { Vector2 } from '../Math/Vector2'
 import { Collider } from './Collider'
-import { CollisionManifold } from './CollisionManifold'
+import { Transform } from './Transform'
 
 export namespace Collisions {
-    export function solve(manifold: CollisionManifold): boolean {
-        let [bodyA, bodyB] = manifold.bodies
+	import Circle = Collider.Circle
+	import Polygon = Collider.Polygon
+	import Capsule = Collider.Capsule
+	import fuzzyEquals = Common.fuzzyEquals
+	import FUZZY_EQUALITY_COMPARISON = Common.FUZZY_EQUALITY_COMPARISON
+	export interface CollisionInfo {
+		contactPoints: Vector2[]
+		normal: Vector2
+		penetration: number
+	}
 
-        if (bodyA.collider instanceof Collider.Circle) {
-            if (bodyB.collider instanceof Collider.Circle) {
-                return circleToCircle(manifold, bodyA.collider, bodyA.transform, bodyB.collider, bodyB.transform)
-            } else if (bodyB.collider instanceof Collider.Polygon) {
-                return circleToPolygon(manifold, bodyA.collider, bodyA.transform, bodyB.collider, bodyB.transform)
-            }
-        } else if (bodyA.collider instanceof Collider.Polygon) {
-            if (bodyB.collider instanceof Collider.Circle) {
-                return polygonToCircle(manifold, bodyA.collider, bodyA.transform, bodyB.collider, bodyB.transform)
-            } else if (bodyB.collider instanceof Collider.Polygon) {
-                return polygonToPolygon(manifold, bodyA.collider, bodyA.transform, bodyB.collider, bodyB.transform)
-            }
-        }
+	export function testCollision(bodyA: Body, bodyB: Body): CollisionInfo | null {
+		if (bodyA.collider instanceof Circle) {
+			if (bodyB.collider instanceof Circle) {
+				return testCircleToCircle(bodyA.collider, bodyA.transform, bodyB.collider, bodyB.transform)
+			} else if (bodyB.collider instanceof Polygon) {
+				return testCircleToPolygon(bodyA.collider, bodyA.transform, bodyB.collider, bodyB.transform)
+			} else if (bodyB.collider instanceof Capsule) {
+				// return testCircleToCapsule(bodyA.collider, bodyA.transform, bodyB.collider, bodyB.transform)
+			}
+		} else if (bodyA.collider instanceof Polygon) {
+			if (bodyB.collider instanceof Circle) {
+				return testPolygonToCircle(bodyA.collider, bodyA.transform, bodyB.collider, bodyB.transform)
+			} else if (bodyB.collider instanceof Polygon) {
+				return testPolygonToPolygon(bodyA.collider, bodyA.transform, bodyB.collider, bodyB.transform)
+			} else if (bodyB.collider instanceof Capsule) {
 
-        return false
-    }
+			}
+		} else if (bodyA.collider instanceof Capsule) {
+			if (bodyB.collider instanceof Circle) {
+				// return testCapsuleToCircle(bodyA.collider, bodyA.transform, bodyB.collider, bodyB.transform)
+			} else if (bodyB.collider instanceof Polygon) {
 
-    export type ProjectionInfo = [min: number, max: number]
-    export type ClosestPointInfo = [closestPoint: Vector, distanceSq: number]
+			} else if (bodyB.collider instanceof Capsule) {
+				// return testCapsuleToCapsule(bodyA.collider, bodyA.transform, bodyB.collider, bodyB.transform)
+			}
+		}
 
-    export function projectPolygonOnAxis(polygonVertices: Vector[], axis: Vector): ProjectionInfo {
-        let min = Infinity
-        let max = -Infinity
-        
-        for (let vertex of polygonVertices) {
-            let projection = FMath.dot(vertex, axis)
-            
-            if (projection < min) min = projection
-            if (projection > max) max = projection
-        }
-        
-        return [min, max]
-    }
-    export function projectCircleOnAxis(circleCenter: Vector, circleRadius: number, axis: Vector): ProjectionInfo {
-        let pointToEdge = Vector.multiply(axis.normalized, circleRadius)
-         
-        let a = Vector.add(circleCenter, pointToEdge)
-        let b = Vector.subtract(circleCenter, pointToEdge)
+		return null
+	}
 
-        let min = FMath.dot(a, axis)
-        let max = FMath.dot(b, axis)
+	export function testCircleToCircle(
+		colliderA: Circle, transformA: Transform,
+		colliderB: Circle, transformB: Transform
+	): CollisionInfo | null {
+		const delta = Vector2.subtract(transformB.position, transformA.position)
+		const distanceSquared = delta.magnitudeSquared
+		const radii = colliderA.radius + colliderB.radius
 
-        if (min > max) [min, max] = [max, min]
+		if (distanceSquared <= radii * radii) {
+			const distance = Math.sqrt(distanceSquared)
+			const normal = Vector2.divide(delta, distance)
+			const penetration = radii - distance
+			const contactPoints = [] as Vector2[]
 
-        return [min, max]
-    }
+			contactPoints[0] = Vector2.add(transformA.position, Vector2.multiply(normal, colliderA.radius))
 
-    export function closestPointOnSegment(point: Vector, start: Vector, end: Vector): ClosestPointInfo {
-        let ab = Vector.subtract(end, start)
-        let ap = Vector.subtract(point, start)
+			return { normal, penetration, contactPoints }
+		}
 
-        let closestPoint = Vector.ZERO
+		return null
+	}
 
-        let projection = FMath.dot(ap, ab)
-        let distanceSq = projection / ab.magnitudeSq
+	export function testPolygonToPolygon(
+		colliderA: Polygon, transformA: Transform,
+		colliderB: Polygon, transformB: Transform
+	): CollisionInfo | null {
+		const verticesA = colliderA.getTransformedVertices(transformA)
+		const verticesB = colliderB.getTransformedVertices(transformB)
+		const edgesA = [] as [Vector2, Vector2][]
+		const edgesB = [] as [Vector2, Vector2][]
 
-        if (distanceSq < 0) closestPoint = start
-        else if (distanceSq > 1) closestPoint = end
-        else closestPoint = Vector.add(start, Vector.multiply(ab, distanceSq))
+		for (let i = 0; i < verticesA.length; i++) {
+			const j = i + 1 < verticesA.length ? i + 1 : 0
 
-        return [closestPoint, FMath.distanceSq(point, closestPoint)]
-    }
-    export function closestPointOnPolygon(point: Vector, polygonVertices: Vector[]): ClosestPointInfo {
-        let closestPoint = Vector.ZERO
-        let minDistanceSq = Infinity
+			edgesA.push([verticesA[i], verticesA[j]])
+		}
+		for (let i = 0; i < verticesB.length; i++) {
+			const j = i + 1 < verticesB.length ? i + 1 : 0
 
-        for (let vertex of polygonVertices) {
-            let distanceSq = FMath.distanceSq(vertex, point)
+			edgesB.push([verticesB[i], verticesB[j]])
+		}
 
-            if (distanceSq < minDistanceSq) {
-                closestPoint = vertex
-                minDistanceSq = distanceSq
-            }
-        }
+		let minOverlap = Infinity
+		let smallestAxis = Vector2.ZERO
 
-        return [closestPoint, minDistanceSq]
-    }
+		for (const [start, end] of [...edgesA, ...edgesB]) {
+			const axis = Vector2.normalize(Vector2.subtract(end, start).perpendicular)
 
-    export function circleToCircle(
-        manifold: CollisionManifold,
-        colliderA: Collider.Circle, transformA: Transform,
-        colliderB: Collider.Circle, transformB: Transform
-    ): boolean {
-        let delta = Vector.subtract(transformB.position, transformA.position)
+			const [minA, maxA] = projectPolygonOntoAxis(verticesA, axis)
+			const [minB, maxB] = projectPolygonOntoAxis(verticesB, axis)
 
-        let distanceSq = delta.magnitudeSq
-        let totalRadius = colliderA.radius + colliderB.radius
+			if (minA > maxB || minB > maxA) return null
 
-        if (distanceSq >= totalRadius * totalRadius) return false
+			const overlap = Math.min(maxA, maxB) - Math.max(minA, minB)
 
-        let distance = Math.sqrt(distanceSq)
+			if (overlap < minOverlap) {
+				minOverlap = overlap
+				smallestAxis = axis
+			}
+		}
 
-        if (distance == 0) {
-            manifold.depth = colliderA.radius
-            manifold.normal = Vector.RIGHT
-            manifold.points = [transformA.position]
-        } else {
-            manifold.depth = totalRadius - distance
-            manifold.normal = Vector.divide(delta, distance)
-            manifold.points = [Vector.add(
-                Vector.multiply(manifold.normal, colliderA.radius),
-                transformA.position
-            )]
-        }   
-        
-        return true
-    }
-    export function polygonToPolygon(
-        manifold: CollisionManifold,
-        colliderA: Collider.Polygon, transformA: Transform,
-        colliderB: Collider.Polygon, transformB: Transform
-    ): boolean {
-        let { vertices: verticesA } = colliderA
-        let { vertices: verticesB } = colliderB
+		const direction = Vector2.subtract(transformB.position, transformA.position)
 
-        let depth = Infinity
-        let normal = Vector.ZERO
+		if (Vector2.dot(direction, smallestAxis) < 0) smallestAxis = smallestAxis.negative
 
-        let minDistanceSq = Infinity
-        let pointA = Vector.ZERO
-        let pointB = Vector.ZERO
-        let contactPoints = 0
+		const contactPoints = [] as Vector2[]
 
-        for (let i = 0; i < verticesA.length; i++) {
-            let start = verticesA[i]
-            let end = i + 1 < verticesA.length ? verticesA[i + 1] : verticesA[0]
-            let edge = Vector.subtract(end, start)
-            let axis = new Vector(-edge.y, edge.x).normalized
+		for (const edgeA of edgesA) {
+			for (const edgeB of edgesB) {
+				const intersectionPoint = intersectionPointOnEdges(...edgeA, ...edgeB)
 
-            let [minA, maxA] = projectPolygonOnAxis(verticesA, axis)
-            let [minB, maxB] = projectPolygonOnAxis(verticesB, axis)
+				if (intersectionPoint) contactPoints.push(intersectionPoint)
+			}
+		}
 
-            if (minA > maxB || minB > maxA) return false
+		return { penetration: minOverlap, normal: smallestAxis, contactPoints }
+	}
+	// export function testCapsuleToCapsule(
+	// 	colliderA: Capsule, transformA: Transform,
+	// 	colliderB: Capsule, transformB: Transform
+	// ): CollisionInfo | null {
+	// 	const [startA, endA] = colliderA.getTransformedEdge(transformA)
+	// 	const [startB, endB] = colliderB.getTransformedEdge(transformB)
+	//
+	// 	const pointEdgePairs = [
+	// 		[startA, startB, endB, false], [endA, startB, endB, false],
+	// 		[startB, startA, endA, true], [endB, startA, endA, true]
+	// 	] as [point: Vector2, start: Vector2, end: Vector2, opposite: boolean][]
+	//
+	// 	let closestPointA = Vector2.ZERO
+	// 	let closestPointB!: Vector2
+	// 	let minDelta!: Vector2
+	// 	let isOpposite = false
+	// 	let minDistanceSquared = Infinity
+	//
+	// 	for (const [point, start, end, opposite] of pointEdgePairs) {
+	// 		const closestPoint = closestPointOnEdge(point, start, end)
+	// 		const delta = Vector2.subtract(closestPoint, point)
+	// 		const distanceSquared = delta.magnitudeSquared
+	//
+	// 		if (fuzzyEquals(distanceSquared, minDistanceSquared)) {
+	// 			if (!Vector2.fuzzyEquals(closestPoint, closestPointA)) {
+	// 				closestPointB = closestPoint
+	// 			}
+	// 		} else if (distanceSquared < minDistanceSquared) {
+	// 			minDistanceSquared = distanceSquared
+	// 			minDelta = delta
+	// 			isOpposite = opposite
+	// 			closestPointA = closestPoint
+	// 		}
+	// 	}
+	//
+	// 	const radii = colliderA.radius + colliderB.radius
+	//
+	// 	if (minDistanceSquared <= radii * radii) {
+	// 		const distance = Math.sqrt(minDistanceSquared)
+	// 		const direction = Vector2.subtract(transformB.position, transformA.position)
+	//
+	// 		let normal = Vector2.divide(minDelta, distance)
+	//
+	// 		if (Vector2.dot(direction, normal) <= 0) normal = normal.negative
+	//
+	// 		const penetration = radii - distance
+	// 		const contactPoints = [] as Vector2[]
+	//
+	// 		contactPoints[0] = Vector2.add(closestPointA, Vector2.multiply(isOpposite ? normal : normal.negative, colliderA.radius))
+	//
+	// 		if (closestPointB) {
+	// 			contactPoints[1] = Vector2.add(closestPointB, Vector2.multiply(isOpposite ? normal : normal.negative, colliderB.radius))
+	// 		}
+	//
+	// 		return { normal, penetration, contactPoints }
+	// 	}
+	//
+	// 	return null
+	// }
+	export function testCircleToPolygon(
+		colliderA: Circle, transformA: Transform,
+		colliderB: Polygon, transformB: Transform
+	): CollisionInfo | null {
+		const vertices = colliderB.getTransformedVertices(transformB)
+		const edges = [] as [Vector2, Vector2][]
 
-            let axisDepth = Math.min(maxA - minB, maxB - minA)
+		for (let i = 0; i < vertices.length; i++) {
+			const j = i + 1 < vertices.length ? i + 1 : 0
 
-            if (axisDepth < depth) {
-                depth = axisDepth
-                normal = axis
-            }
+			edges.push([vertices[i], vertices[j]])
+		}
 
-            for (let vertex of verticesB) {
-                let [closestPoint, distanceSq] = closestPointOnSegment(vertex, start, end)
+		let minOverlap = Infinity
+		let smallestAxis = Vector2.ZERO
 
-                if (FMath.fuzzyEquals(distanceSq, minDistanceSq)) {
-                    if (
-                        !FMath.fuzzyEquals(closestPoint, pointA) &&
-                        !FMath.fuzzyEquals(closestPoint, pointB)
-                    ) {
-                        pointB = closestPoint
-                        contactPoints = 2
-                    }
-                } else if (distanceSq < minDistanceSq) {
-                    minDistanceSq = distanceSq
-                    pointA = closestPoint
-                    contactPoints = 1
-                }
-            }
-        }
-        for (let i = 0; i < verticesB.length; i++) {
-            let start = verticesB[i]
-            let end = i + 1 < verticesB.length ? verticesB[i + 1] : verticesB[0]
-            let edge = Vector.subtract(end, start)
-            let axis = new Vector(-edge.y, edge.x).normalized
+		for (const [start, end] of edges) {
+			const edge = Vector2.subtract(end, start)
+			const axis = Vector2.normalize(edge.perpendicular)
 
-            let [minA, maxA] = projectPolygonOnAxis(verticesA, axis)
-            let [minB, maxB] = projectPolygonOnAxis(verticesB, axis)
+			const [minA, maxA] = projectPolygonOntoAxis(vertices, axis)
+			const [minB, maxB] = projectCircleOntoAxis(transformA.position, colliderA.radius, axis)
 
-            if (minA > maxB || minB > maxA) return false
+			if (minA > maxB || minB > maxA) return null
 
-            let axisDepth = Math.min(maxA - minB, maxB - minA)
+			const overlap = Math.min(maxA, maxB) - Math.max(minA, minB)
 
-            if (axisDepth < depth) {
-                depth = axisDepth
-                normal = axis
-            }
+			if (overlap < minOverlap) {
+				minOverlap = overlap
+				smallestAxis = axis
+			}
+		}
 
-            for (let vertex of verticesA) {
-                let [closestPoint, distanceSq] = closestPointOnSegment(vertex, start, end)
+		const direction = Vector2.subtract(transformB.position, transformA.position)
 
-                if (FMath.fuzzyEquals(distanceSq, minDistanceSq)) {
-                    if (
-                        !FMath.fuzzyEquals(closestPoint, pointA) &&
-                        !FMath.fuzzyEquals(closestPoint, pointB)
-                    ) {
-                        pointB = closestPoint
-                        contactPoints = 2
-                    }
-                } else if (distanceSq < minDistanceSq) {
-                    minDistanceSq = distanceSq
-                    pointA = closestPoint
-                    contactPoints = 1
-                }
-            }
-        }
+		const [minA, maxA] = projectPolygonOntoAxis(vertices, direction)
+		const [minB, maxB] = projectCircleOntoAxis(transformA.position, colliderA.radius, direction)
 
-        let direction = Vector.subtract(transformB.position, transformA.position)
+		if (minA > maxB || minB > maxA) return null
 
-        if (FMath.dot(direction, normal) < 0) normal = normal.negative
+		const overlap = Math.min(maxA, maxB) - Math.max(minA, minB)
 
-        manifold.depth = depth
-        manifold.normal = normal
-        manifold.points = contactPoints == 1 ? [pointA] : [pointA, pointB]
-        
-        return true
-    }
-    export function circleToPolygon(
-        manifold: CollisionManifold,
-        colliderA: Collider.Circle, transformA: Transform,
-        colliderB: Collider.Polygon, transformB: Transform
-    ): boolean {
-        let { vertices: polygonVertices } = colliderB
+		if (overlap < minOverlap) {
+			minOverlap = overlap
+			smallestAxis = direction
+		}
 
-        let depth = Infinity
-        let normal = Vector.ZERO
+		if (Vector2.dot(direction, smallestAxis) < 0) smallestAxis = smallestAxis.negative
 
-        let minDistanceSq = Infinity
-        let contactPoint = Vector.ZERO
+		const contactPoints = [] as Vector2[]
+		let minDistanceSquared = Infinity
 
-        for (let i = 0; i < polygonVertices.length; i++) {
-            let start = polygonVertices[i]
-            let end = i + 1 < polygonVertices.length ? polygonVertices[i + 1] : polygonVertices[0]
-            let edge = Vector.subtract(end, start)
-            let axis = new Vector(-edge.y, edge.x).normalized
+		for (const [start, end] of edges) {
+			const closestPoint = closestPointOnEdge(transformA.position, start, end)
+			const distanceSquared = Vector2.subtract(closestPoint, transformA.position).magnitudeSquared
 
-            let [minA, maxA] = projectCircleOnAxis(transformA.position, colliderA.radius, axis)
-            let [minB, maxB] = projectPolygonOnAxis(polygonVertices, axis)
+			if (distanceSquared < minDistanceSquared) {
+				minDistanceSquared = distanceSquared
+				contactPoints[0] = closestPoint
+			}
+		}
 
-            if (minA > maxB || minB > maxA) return false
+		return { penetration: minOverlap, normal: smallestAxis, contactPoints }
+	}
+	export function testPolygonToCircle(
+		colliderA: Polygon, transformA: Transform,
+		colliderB: Circle, transformB: Transform
+	): CollisionInfo | null {
+		const collisionInfo = testCircleToPolygon(colliderB, transformB, colliderA, transformA)
 
-            let axisDepth = Math.min(maxA - minB, maxB - minA)
+		if (collisionInfo) {
+			collisionInfo.normal = collisionInfo.normal.negative
 
-            if (axisDepth < depth) {
-                depth = axisDepth
-                normal = axis
-            }
+			return collisionInfo
+		} else return null
+	}
 
-            let [closestPoint, distanceSq] = closestPointOnSegment(transformA.position, start, end)
+	// export function testCircleToCapsule(
+	// 	colliderA: Circle, transformA: Transform,
+	// 	colliderB: Capsule, transformB: Transform
+	// ): CollisionInfo | null {
+	// 	const [start, end] = colliderB.getTransformedEdge(transformB)
+	//
+	// 	const closestPoint = closestPointOnEdge(transformA.position, start, end)
+	// 	const delta = Vector2.subtract(closestPoint, transformA.position)
+	// 	const distanceSquared = delta.magnitudeSquared
+	// 	const radii = colliderA.radius + colliderB.radius
+	//
+	// 	if (distanceSquared <= radii * radii) {
+	// 		const distance = Math.sqrt(distanceSquared)
+	// 		const normal = Vector2.divide(delta, distance)
+	// 		const penetration = radii - distance
+	// 		const contactPoints = [] as Vector2[]
+	//
+	// 		contactPoints[0] = Vector2.add(transformA.position, Vector2.multiply(normal, colliderA.radius))
+	//
+	// 		return { normal, penetration, contactPoints }
+	// 	}
+	//
+	// 	return null
+	// }
+	// export function testCapsuleToCircle(
+	// 	colliderA: Capsule, transformA: Transform,
+	// 	colliderB: Circle, transformB: Transform
+	// ): CollisionInfo | null {
+	// 	const collisionInfo = testCircleToCapsule(colliderB, transformB, colliderA, transformA)
+	//
+	// 	if (collisionInfo) {
+	// 		collisionInfo.normal = collisionInfo.normal.negative
+	//
+	// 		return collisionInfo
+	// 	} else return null
+	// }
 
-            if (distanceSq < minDistanceSq) {
-                minDistanceSq = distanceSq
-                contactPoint = closestPoint
-            }
-        }
+	function projectPolygonOntoAxis(vertices: Vector2[], axis: Vector2): [min: number, max: number] {
+		let min = Infinity
+		let max = -Infinity
 
-        let [closestPoint] = closestPointOnPolygon(transformA.position, polygonVertices)
+		for (const vertex of vertices) {
+			const projection = Vector2.dot(vertex, axis)
 
-        let axis = Vector.subtract(closestPoint, transformA.position)
+			if (projection < min) min = projection
+			if (projection > max) max = projection
+		}
 
-        let [minA, maxA] = projectCircleOnAxis(transformA.position, colliderA.radius, axis)
-        let [minB, maxB] = projectPolygonOnAxis(polygonVertices, axis)
+		return [min, max]
+	}
+	function projectCircleOntoAxis(center: Vector2, radius: number, axis: Vector2): [min: number, max: number] {
+		const direction = Vector2.multiply(axis, radius)
 
-        if (minA > maxB || minB > maxA) return false
+		let min = Vector2.dot(Vector2.add(center, direction), axis)
+		let max = Vector2.dot(Vector2.subtract(center, direction), axis)
 
-        let axisDepth = Math.min(maxA - minB, maxB - minA)
+		if (min > max) [min, max] = [max, min]
 
-        if (axisDepth < depth) {
-            depth = axisDepth
-            normal = axis
-        }
+		return [min, max]
+	}
 
-        let direction = Vector.subtract(transformB.position, transformA.position)
+	function closestPointOnEdge(point: Vector2, start: Vector2, end: Vector2): Vector2 {
+		const delta = Vector2.subtract(point, start)
+		const edge = Vector2.subtract(end, start)
 
-        if (FMath.dot(direction, normal) < 0) normal = normal.negative
+		const projection = Vector2.dot(delta, edge)
+		const direction = projection / edge.magnitudeSquared
 
-        manifold.depth = depth
-        manifold.normal = normal
-        manifold.points = [contactPoint]
+		let closestPoint: Vector2
 
-        return true
-    }
-    export function polygonToCircle(
-        manifold: CollisionManifold,
-        colliderA: Collider.Polygon, transformA: Transform,
-        colliderB: Collider.Circle, transformB: Transform
-    ): boolean {
-        let collision = circleToPolygon(manifold, colliderB, transformB, colliderA, transformA)
+		if (direction <= 0) {
+			closestPoint = start
+		} else if (direction >= 1) {
+			closestPoint = end
+		} else {
+			closestPoint = Vector2.add(start, Vector2.multiply(edge, direction))
+		}
 
-        manifold.normal = manifold.normal.negative
+		return closestPoint
+	}
+	function intersectionPointOnEdges(startA: Vector2, endA: Vector2, startB: Vector2, endB: Vector2): Vector2 | null {
+		const edgeA = Vector2.subtract(endA, startA)
+		const edgeB = Vector2.subtract(endB, startB)
 
-        return collision
-    }
+		const determinant = Vector2.cross(edgeA, edgeB)
+
+		if (Math.abs(determinant) < 1e-6) return null // parallel/collinear
+
+		const delta = Vector2.subtract(startB, startA)
+		const t = Vector2.cross(delta, edgeB) / determinant
+		const u = Vector2.cross(delta, edgeA) / determinant
+
+		if (t >= 0 && t <= 1 && u >= 0 && u <= 1) return Vector2.add(startA, Vector2.multiply(edgeA, t))
+
+		return null // not intersecting
+	}
 }
