@@ -3,6 +3,7 @@ import { Transform } from '../Physics/Transform'
 import fuzzyEquals = Common.fuzzyEquals
 
 export class Vector2 {
+	// constants
 	public static readonly ZERO = new Vector2(0, 0)
 	public static readonly ONE = new Vector2(1, 1)
 	public static readonly UP = new Vector2(0, -1)
@@ -15,19 +16,27 @@ export class Vector2 {
 		public readonly y: number
 	) {}
 
-	public static add(...vn: Vector2[]): Vector2 {
-		let sumX = 0
-		let sumY = 0
+	public static add(v_a: Vector2, v_b: Vector2, ...v_n: Vector2[]): Vector2 {
+		let sumX = v_a.x + v_b.x
+		let sumY = v_a.y + v_b.y
 
-		for (const v of vn) {
+		for (const v of v_n) {
 			sumX += v.x
 			sumY += v.y
 		}
 
 		return new Vector2(sumX, sumY)
 	}
-	public static subtract(v1: Vector2, v2: Vector2): Vector2 {
-		return new Vector2(v1.x - v2.x, v1.y - v2.y)
+	public static subtract(v_a: Vector2, v_b: Vector2, ...v_n: Vector2[]): Vector2 {
+		let differenceX = v_a.x - v_b.x
+		let differenceY = v_a.y - v_b.y
+
+		for (const v of v_n) {
+			differenceX += v.x
+			differenceY += v.y
+		}
+
+		return new Vector2(differenceX, differenceY)
 	}
 	public static multiply(v: Vector2, scalar: number): Vector2 {
 		return new Vector2(v.x * scalar, v.y * scalar)
@@ -72,7 +81,7 @@ export class Vector2 {
 		return new Vector2(x, y)
 	}
 
-	public static transform(t: Transform, v: Vector2): Vector2 {
+	public static transform(v: Vector2, t: Transform): Vector2 {
 		return Vector2.add(
 			Vector2.rotate(v, t.rotation),
 			t.position
@@ -86,6 +95,7 @@ export class Vector2 {
 		return new Vector2(-this.y, this.x)
 	}
 
+	// using getters because these should only be calculated when needed
 	public get magnitudeSquared(): number {
 		return this.x * this.x + this.y * this.y
 	}

@@ -6,3 +6,11 @@
 body {
     background-color: #0d0e17;
 }
+
+#main {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    justify-content: center;
+    align-items: center;
+}

@@ -12,6 +12,7 @@ export abstract class Collider {
 export namespace Collider {
 	export class Circle extends Collider {
 		public constructor(public readonly radius: number) {
+			// A = pi(r^2)
 			super(Math.PI * radius * radius)
 		}
 
@@ -23,23 +24,27 @@ export namespace Collider {
 		}
 	}
 
+	// works, but collision doesn't atm
 	export class Capsule extends Collider {
-		private readonly start: Vector2
-		private readonly end: Vector2
+		public readonly start: Vector2
+		public readonly end: Vector2
 
 		public constructor(public readonly radius: number, public readonly length: number) {
+			// pi(r^2) + l * 2r simplified to
+			// r(pi(r) + 2l)
 			super(radius * (Math.PI * radius + 2 * length))
 
 			const halfLength = length / 2
 
+			// edge/line segment of the capsule
 			this.start = new Vector2(0, halfLength)
 			this.end = new Vector2(0, -halfLength)
 		}
 
 		public getTransformedEdge(parentTransform: Transform): [start: Vector2, end: Vector2] {
 			return [
-				Vector2.transform(parentTransform, this.start),
-				Vector2.transform(parentTransform, this.end)
+				Vector2.transform(this.start, parentTransform),
+				Vector2.transform(this.end, parentTransform)
 			]
 		}
 		public getBoundingBox(parentTransform: Transform): BoundingBox {
@@ -59,21 +64,24 @@ export namespace Collider {
 
 	export class Polygon extends Collider {
 		public constructor(public readonly vertices: readonly Vector2[]) {
+			// might consider getting the convex hull since the polygon can be concave, which I don't support yet
 			if (vertices.length < 3)
 				throw new Error('Cannot create a polygon with less than 3 vertices')
 
 			let area = 0
 
+			// absolute sum of v_n+1 x v_n all over 2
 			for (let i = 0; i < vertices.length; i++) {
 				const currentVertex = vertices[i]
 				const nextVertex = vertices[(i + 1) % vertices.length]
 
-				area += Vector2.cross(currentVertex, nextVertex)
+				area += Vector2.cross(nextVertex, currentVertex)
 			}
 
 			super(Math.abs(area / 2))
 		}
 
+		// methods for making other types of polygons
 		public static regular(radius: number, sides: number): Polygon {
 			const vertices = [] as Vector2[]
 			const theta = (2 * Math.PI) / sides
@@ -88,7 +96,6 @@ export namespace Collider {
 
 			return new Polygon(vertices)
 		}
-
 		public static rectangle(width: number, height: number): Polygon {
 			const left = -width / 2
 			const right = left + width
@@ -109,7 +116,7 @@ export namespace Collider {
 			const transformedVertices = [] as Vector2[]
 
 			for (const vertex of this.vertices) {
-				transformedVertices.push(Vector2.transform(parentTransform, vertex))
+				transformedVertices.push(Vector2.transform(vertex, parentTransform))
 			}
 
 			return transformedVertices

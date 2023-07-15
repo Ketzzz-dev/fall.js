@@ -24,15 +24,16 @@ export class Body {
 		public readonly isStatic = false
 	) {
 		if (isStatic) {
+			// infinite mass
 			this.mass = 0
 			this.inverseMass = 0
 			this.inertia = 0
 			this.inverseInertia = 0
 		} else {
 			this.mass = collider.area * material.density
-			this.inverseMass = 1 / this.mass
+			this.inverseMass = this.mass != 0 ? 1 / this.mass : 0
 			this.inertia = this.calculateInertia()
-			this.inverseInertia = 1 / this.inertia
+			this.inverseInertia = this.inertia != 0 ? 1 / this.inertia : 0
 		}
 	}
 
@@ -53,10 +54,11 @@ export class Body {
 	public update(deltaTime: number): void {
 		if (this.isStatic) return
 
-		// RK4 (Runge-Kutta 4th order)
 		const linearAcceleration = Vector2.multiply(this.force, this.inverseMass)
 		const rotationalAcceleration = this.torque * this.inverseInertia
 
+		// RK4 (Runge-Kutta 4th order), better than Euler's method and Verlet integration
+		// k_1 = yn
 		const k1p = this.linearVelocity
 		const k1lv = linearAcceleration
 		const k1r = this.rotationalVelocity
@@ -64,16 +66,20 @@ export class Body {
 
 		const deltaTimeOverTwo = deltaTime / 2
 
+		// h is deltaTime
+		// k_2 = yn + h(k_1/2)
 		const k2p = Vector2.add(this.linearVelocity, Vector2.multiply(k1p, deltaTimeOverTwo))
 		const k2lv = Vector2.add(linearAcceleration, Vector2.multiply(k1lv, deltaTimeOverTwo))
 		const k2r = this.rotationalVelocity + k1r * deltaTimeOverTwo
 		const k2rv = rotationalAcceleration + k1rv * deltaTimeOverTwo
 
+		// k_3 = yn + h(k_2/2)
 		const k3p = Vector2.add(this.linearVelocity, Vector2.multiply(k2p, deltaTimeOverTwo))
 		const k3lv = Vector2.add(linearAcceleration, Vector2.multiply(k2lv, deltaTimeOverTwo))
 		const k3r = this.rotationalVelocity + k2r * deltaTimeOverTwo
 		const k3rv = rotationalAcceleration + k2rv * deltaTimeOverTwo
 
+		// k_4 = yn + h_k3
 		const k4p = Vector2.add(this.linearVelocity, Vector2.multiply(k3p, deltaTime))
 		const k4lv = Vector2.add(linearAcceleration, Vector2.multiply(k3lv, deltaTime))
 		const k4r = this.rotationalVelocity + k3r * deltaTime
@@ -82,7 +88,6 @@ export class Body {
 		const deltaTimeOverSix = deltaTime / 6
 
 		// weighted average of the last 4 points
-		// more precision
 		const dp = Vector2.multiply(
 			Vector2.add(
 				k1p,
@@ -109,16 +114,19 @@ export class Body {
 		this.transform.rotation += dr
 		this.rotationalVelocity += drv
 
+		// reset net force and torque
 		this.force = Vector2.ZERO
 		this.torque = 0
 	}
 
 	private calculateInertia(): number {
 		if (this.collider instanceof Circle) {
+			// 1/2mr^2
 			return .5 * this.mass * this.collider.radius * this.collider.radius
 		} else if (this.collider instanceof Polygon) {
-			// ugh, any easier way to do this?
-			let inertia = 0
+			// err, IDK how to name
+			let num = 0
+			let den = 0
 
 			for (let i = 0; i < this.collider.vertices.length; i++) {
 				const currentVertex = this.collider.vertices[i]
@@ -127,11 +135,14 @@ export class Body {
 				const cross = Vector2.cross(nextVertex, currentVertex)
 				const dot = Vector2.dot(currentVertex, nextVertex)
 
-				inertia += Math.abs(cross) * (currentVertex.magnitudeSquared + dot + nextVertex.magnitudeSquared)
+				num += cross * (currentVertex.magnitudeSquared + dot + nextVertex.magnitudeSquared)
+				den += cross
 			}
 
-			return this.mass * (inertia / 6)
+			return (this.mass / 6) * (num / den)
 		} else if (this.collider instanceof Capsule) {
+			// 1/2mr^2 + 1/12m(2r^2 + l^2) simplified to
+			// (8mr^2 + l^2m)/12
 			return (this.collider.length * this.collider.length * this.mass + 8 * this.mass * this.collider.radius * this.collider.radius) / 12
 		} else throw new TypeError('Unknown collider type')
 	}

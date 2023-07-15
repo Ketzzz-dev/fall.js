@@ -33,8 +33,8 @@ const ground = new Body(new Transform(new Vector2(0, 8)), Polygon.rectangle(23, 
 
 world.addBodies(ground)
 
-for (let i = 0; i < 25; i++) {
-	const body = new Body(new Transform(new Vector2(Math.random() * 10 - 5, Math.random() * -5), Math.random() * Math.PI * 2), Polygon.regular(.75,3), Material.DEFAULT)
+for (let i = 0; i < 1; i++) {
+	const body = new Body(new Transform(new Vector2(Math.random() * 10 - 5, Math.random() * -5), Math.random() * Math.PI * 2), Polygon.regular(1, 5), Material.DEFAULT)
 
 	console.log(body.mass, body.inertia)
 
@@ -66,7 +66,7 @@ engine.on('update', (deltaTime) => {
 			context.arc(body.transform.position.x, body.transform.position.y, body.collider.radius, 0, Math.PI * 2)
 			context.moveTo(body.transform.position.x, body.transform.position.y)
 
-			const end = Vector2.transform(body.transform, Vector2.multiply(Vector2.RIGHT, body.collider.radius))
+			const end = Vector2.transform(Vector2.multiply(Vector2.RIGHT, body.collider.radius), body.transform)
 
 			context.lineTo(end.x, end.y)
 		} else if (body.collider instanceof Polygon) {
@@ -87,19 +87,6 @@ engine.on('update', (deltaTime) => {
 		context.closePath()
 		context.stroke()
 	}
-
-	// context.strokeStyle = 'red'
-	//
-	// for (const { normal, penetration, contactPoints } of world.collisions) {
-	// 	const correction = Vector2.multiply(normal, penetration * PIXELS_PER_METER)
-	//
-	// 	for (const point of contactPoints) {
-	// 		context.beginPath()
-	// 		context.arc(point.x, point.y, 1 / PIXELS_PER_METER, 0, Math.PI * 2)
-	// 		context.closePath()
-	// 		context.stroke()
-	// 	}
-	// }
 
 	context.restore()
 }).run()

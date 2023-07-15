@@ -1,4 +1,3 @@
-import { Common } from '../Math/Common'
 import { Body } from './Body'
 import { Vector2 } from '../Math/Vector2'
 import { Collider } from './Collider'
@@ -8,8 +7,6 @@ export namespace Collisions {
 	import Circle = Collider.Circle
 	import Polygon = Collider.Polygon
 	import Capsule = Collider.Capsule
-	import fuzzyEquals = Common.fuzzyEquals
-	import FUZZY_EQUALITY_COMPARISON = Common.FUZZY_EQUALITY_COMPARISON
 	export interface CollisionInfo {
 		contactPoints: Vector2[]
 		normal: Vector2
@@ -54,20 +51,22 @@ export namespace Collisions {
 		const distanceSquared = delta.magnitudeSquared
 		const radii = colliderA.radius + colliderB.radius
 
-		if (distanceSquared <= radii * radii) {
-			const distance = Math.sqrt(distanceSquared)
-			const normal = Vector2.divide(delta, distance)
-			const penetration = radii - distance
-			const contactPoints = [] as Vector2[]
+		// ||C_b - P_a|| > r_b + r_a means they're not intersecting
+		if (distanceSquared > radii * radii) return null
 
-			contactPoints[0] = Vector2.add(transformA.position, Vector2.multiply(normal, colliderA.radius))
+		// no need to Vector2.normalize() since the distance is already calculated
+		const distance = Math.sqrt(distanceSquared)
+		const normal = Vector2.divide(delta, distance)
+		const penetration = radii - distance
+		const contactPoints = [] as Vector2[]
 
-			return { normal, penetration, contactPoints }
-		}
+		// would add a 2nd contact point, but it doesn't make sense
+		contactPoints[0] = Vector2.add(transformA.position, Vector2.multiply(normal, colliderA.radius))
 
-		return null
+		return { normal, penetration, contactPoints }
 	}
 
+	// Separating-Axis Theorem (SAT)
 	export function testPolygonToPolygon(
 		colliderA: Polygon, transformA: Transform,
 		colliderB: Polygon, transformB: Transform
@@ -91,16 +90,21 @@ export namespace Collisions {
 		let minOverlap = Infinity
 		let smallestAxis = Vector2.ZERO
 
+		// loop through every single edge
 		for (const [start, end] of [...edgesA, ...edgesB]) {
+			// normal (perpendicular) of the edge
 			const axis = Vector2.normalize(Vector2.subtract(end, start).perpendicular)
 
+			// projecting the polygons onto the axis
 			const [minA, maxA] = projectPolygonOntoAxis(verticesA, axis)
 			const [minB, maxB] = projectPolygonOntoAxis(verticesB, axis)
 
+			// projections aren't overlapping means there is separation, and we can carry on with our lives
 			if (minA > maxB || minB > maxA) return null
 
 			const overlap = Math.min(maxA, maxB) - Math.max(minA, minB)
 
+			// save the smallest overlap and axis to be used as our normal and penetration
 			if (overlap < minOverlap) {
 				minOverlap = overlap
 				smallestAxis = axis
@@ -109,10 +113,12 @@ export namespace Collisions {
 
 		const direction = Vector2.subtract(transformB.position, transformA.position)
 
+		// making sure the normal is pointing at the right direction (A to B)
 		if (Vector2.dot(direction, smallestAxis) < 0) smallestAxis = smallestAxis.negative
 
 		const contactPoints = [] as Vector2[]
 
+		// polygon clipping, might need a better way to calculate the contact points
 		for (const edgeA of edgesA) {
 			for (const edgeB of edgesB) {
 				const intersectionPoint = intersectionPointOnEdges(...edgeA, ...edgeB)
@@ -123,6 +129,7 @@ export namespace Collisions {
 
 		return { penetration: minOverlap, normal: smallestAxis, contactPoints }
 	}
+	// TODO: fix this
 	// export function testCapsuleToCapsule(
 	// 	colliderA: Capsule, transformA: Transform,
 	// 	colliderB: Capsule, transformB: Transform
@@ -182,6 +189,8 @@ export namespace Collisions {
 	//
 	// 	return null
 	// }
+
+	// SAT again
 	export function testCircleToPolygon(
 		colliderA: Circle, transformA: Transform,
 		colliderB: Polygon, transformB: Transform
@@ -215,10 +224,12 @@ export namespace Collisions {
 			}
 		}
 
-		const direction = Vector2.subtract(transformB.position, transformA.position)
+		// using the closest vertex from the circle center as the axis
+		const closestVertex = closestVertexOnPolygon(transformA.position, vertices)
+		const axis = Vector2.normalize(Vector2.subtract(closestVertex, transformA.position))
 
-		const [minA, maxA] = projectPolygonOntoAxis(vertices, direction)
-		const [minB, maxB] = projectCircleOntoAxis(transformA.position, colliderA.radius, direction)
+		const [minA, maxA] = projectPolygonOntoAxis(vertices, axis)
+		const [minB, maxB] = projectCircleOntoAxis(transformA.position, colliderA.radius, axis)
 
 		if (minA > maxB || minB > maxA) return null
 
@@ -226,14 +237,18 @@ export namespace Collisions {
 
 		if (overlap < minOverlap) {
 			minOverlap = overlap
-			smallestAxis = direction
+			smallestAxis = axis
 		}
 
+		const direction = Vector2.subtract(transformB.position, transformA.position)
+
+		// making sure that the normal is pointing at the right direction, again
 		if (Vector2.dot(direction, smallestAxis) < 0) smallestAxis = smallestAxis.negative
 
 		const contactPoints = [] as Vector2[]
 		let minDistanceSquared = Infinity
 
+		// loop over the edges and finding the closest point from the circle center
 		for (const [start, end] of edges) {
 			const closestPoint = closestPointOnEdge(transformA.position, start, end)
 			const distanceSquared = Vector2.subtract(closestPoint, transformA.position).magnitudeSquared
@@ -252,6 +267,7 @@ export namespace Collisions {
 	): CollisionInfo | null {
 		const collisionInfo = testCircleToPolygon(colliderB, transformB, colliderA, transformA)
 
+		// reversing since normal needs to be pointing from A to B
 		if (collisionInfo) {
 			collisionInfo.normal = collisionInfo.normal.negative
 
@@ -259,6 +275,7 @@ export namespace Collisions {
 		} else return null
 	}
 
+	// no TODOs, this works fine
 	// export function testCircleToCapsule(
 	// 	colliderA: Circle, transformA: Transform,
 	// 	colliderB: Capsule, transformB: Transform
@@ -296,6 +313,7 @@ export namespace Collisions {
 	// 	} else return null
 	// }
 
+	// helper functions
 	function projectPolygonOntoAxis(vertices: Vector2[], axis: Vector2): [min: number, max: number] {
 		let min = Infinity
 		let max = -Infinity
@@ -320,21 +338,39 @@ export namespace Collisions {
 		return [min, max]
 	}
 
+	function closestVertexOnPolygon(point: Vector2, vertices: Vector2[]): Vector2 {
+		let closestVertex!: Vector2
+		let minDistanceSquared = Infinity
+
+		for (const vertex of vertices) {
+			const distanceSquared = Vector2.subtract(vertex, point).magnitudeSquared
+
+			if (distanceSquared < minDistanceSquared) {
+				closestVertex = vertex
+				minDistanceSquared = distanceSquared
+			}
+		}
+
+		return closestVertex
+	}
+
+	// point to line segment
+	// side note: I'm using edge and line segment interchangeably
 	function closestPointOnEdge(point: Vector2, start: Vector2, end: Vector2): Vector2 {
 		const delta = Vector2.subtract(point, start)
 		const edge = Vector2.subtract(end, start)
 
 		const projection = Vector2.dot(delta, edge)
-		const direction = projection / edge.magnitudeSquared
+		const distance = projection / edge.magnitudeSquared
 
 		let closestPoint: Vector2
 
-		if (direction <= 0) {
+		if (distance <= 0) {
 			closestPoint = start
-		} else if (direction >= 1) {
+		} else if (distance >= 1) {
 			closestPoint = end
 		} else {
-			closestPoint = Vector2.add(start, Vector2.multiply(edge, direction))
+			closestPoint = Vector2.add(start, Vector2.multiply(edge, distance))
 		}
 
 		return closestPoint
