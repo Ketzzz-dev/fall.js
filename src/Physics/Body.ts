@@ -33,7 +33,7 @@ export class Body {
 			this.mass = collider.area * material.density
 			this.inverseMass = this.mass != 0 ? 1 / this.mass : 0
 			this.inertia = this.calculateInertia()
-			this.inverseInertia = this.inertia != 0 ? 1 / this.inertia : 0
+			this.inverseInertia = this.inertia !	= 0 ? 1 / this.inertia : 0
 		}
 	}
 

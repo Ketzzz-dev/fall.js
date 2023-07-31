@@ -31,7 +31,7 @@ export class World {
 	}
 
 	public update(deltaTime: number): void {
-		// broad-phase collision, might consider using quad-trees or a grid
+		// broad-phase collision, might consider using quad-trees or a grid		
 		const pairs = [] as [Body, Body][]
 
 		for (let i = 0; i < this.bodies.length; i++) {
